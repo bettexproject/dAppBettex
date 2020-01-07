@@ -1,0 +1,17 @@
+{
+  "name": "bettex3",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon app"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "lodash": "^4.17.15",
+    "mongoose": "5.8.4",
+    "web3": "^1.2.4"
+  }
+}

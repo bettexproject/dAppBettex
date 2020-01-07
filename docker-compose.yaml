@@ -1,0 +1,12 @@
+version: '2.0'
+
+services:
+  backend:
+    build: docker/node
+    volumes:
+      - ./backend:/code:rw
+    command: sh -c 'cd /code; npm install; npm run dev'
+    ports:
+      - 8080:8080
+  mongo:
+    image: mongo
