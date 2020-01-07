@@ -10,8 +10,11 @@ contract ERC20 {
 contract BettexEth is usingProvable {
     ERC20 USDT = ERC20(0x25211B0C499f143E7B6f09eC38C7e60d78E37d15);
     
-    mapping (uint => bytes32) proofsByBlock;
-    mapping (address => uint) userBalances;
+    uint public lastBlock = block.number;
+    uint public contractCreated = block.number;
+    
+    mapping (uint => bytes32) public proofsByBlock;
+    mapping (address => uint) public userBalances;
     
     /* deposit */
     event Deposit(uint blocknumber, address account, uint amount);
@@ -22,9 +25,9 @@ contract BettexEth is usingProvable {
     }
     
     function deposit(uint amount) external {
-        if (!USDT.transferFrom(msg.sender, address(this), amount)) {
-            revert();
-        }
+        // if (!USDT.transferFrom(msg.sender, address(this), amount)) {
+        //     revert();
+        // }
         addActionProof(depositHash(msg.sender, amount));
         emit Deposit(block.number, msg.sender, amount);
     }
@@ -32,6 +35,7 @@ contract BettexEth is usingProvable {
     /* withdraw */
     event Withdraw (uint blocknumber, address account, uint amount);
     event WithdrawPlayed (address account, uint amount, uint balance);
+    event WithdrawPlayFailed (address account, uint amount);
     
     function withdrawHash (address account, uint amount) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked("withdraw", account, amount));
@@ -45,22 +49,23 @@ contract BettexEth is usingProvable {
     /* bet */
     event Bet (uint blocknumber, address account, uint eventid, uint subevent, uint amount, uint odds, bool side);
     event BetPlayed (address account, uint eventid, uint subevent, uint amount, uint odds, bool side);
+    event BetPlayFailed (address account, uint eventid, uint subevent, uint amount, uint odds, bool side);
     
     function betHash (address account, uint eventid, uint subevent, uint amount, uint odds, bool side) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked("bet", account, eventid, subevent, amount, odds, side));
     }
     
-    function bet (address account, uint eventid, uint subevent, uint amount, uint odds, bool side) external {
+    function bet (uint eventid, uint subevent, uint amount, uint odds, bool side) external {
         require(odds > ODDS_PRECISION);
         require(odds <= ODDS_PRECISION * ODDS_PRECISION);
-        addActionProof(betHash(account, eventid, subevent, amount, odds, side));
-        emit Bet (block.number, account, eventid, subevent, amount, odds, side);
+        addActionProof(betHash(msg.sender, eventid, subevent, amount, odds, side));
+        emit Bet (block.number, msg.sender, eventid, subevent, amount, odds, side);
     }
     
     /* bets structures */
     
-    uint constant ODDS_PRECISION = 1000;
-    
+    uint constant public ODDS_PRECISION = 1000;
+
     struct BetItem {
         address owner;
         bool side;
@@ -132,7 +137,12 @@ contract BettexEth is usingProvable {
         return keccak256(abi.encodePacked(eventid, subevent));
     }
 
-    function tryDoBet(address account, uint64 eventid, uint64 subevent, uint64 amount, uint64 odds, bool side, uint hint_add_odds_this) public {
+    function tryDoBet(address account, uint64 eventid, uint64 subevent, uint64 amount, uint64 odds, bool side, uint hint_add_odds_this) internal returns (bool) {
+        if (userBalances[account] < amount) {
+            return false;
+        }
+        userBalances[account] -= amount;
+        
         bytes32 eventHash = getEventHash(eventid, subevent);
         SortedIteratorHelper storage betsForThisSide = side ? betsForEvents[eventHash].betsFor : betsForEvents[eventHash].betsAgainst;
         SortedIteratorHelper storage betsForOpposite = side ? betsForEvents[eventHash].betsAgainst : betsForEvents[eventHash].betsFor;
@@ -142,56 +152,115 @@ contract BettexEth is usingProvable {
 
         // consume unspent from opposite
         BetsForEvent_consumeTop(betsForOpposite, allBets[betThisSide]);
+        return true;
+    }
+    
+    function nextNonzero(uint startFrom) public view returns (uint) {
+        for (uint i = startFrom; i <= block.number; i++) {
+            if (proofsByBlock[i] != 0) {
+                return i;
+            }
+        }
+        return 0;
     }
     
     /* playback of actions */
     
-    function playback(uint blocknumber, bytes32[] calldata compressedActions) external {
-        bytes32 currentHash = 0;
-        bytes32 targetHash = proofsByBlock[blocknumber];
-        for (uint pos = 0; pos < compressedActions.length; ) {
-            bytes32 action = compressedActions[pos++];
-            
-            if (action == bytes32("deposit")) {
-                address account = address(uint160(uint256(compressedActions[pos++])));
-                uint amount = uint(compressedActions[pos++]);
-                currentHash = keccak256(abi.encodePacked(currentHash, depositHash(account, amount)));
-                uint balance = userBalances[account] + amount;
-                userBalances[account] = balance;
-                emit DepositPlayed(account, amount, balance);
-            }
-            
-            if (action == bytes32("withdraw")) {
-                address account = address(uint160(uint256(compressedActions[pos++])));
-                uint amount = uint(compressedActions[pos++]);
-                currentHash = keccak256(abi.encodePacked(currentHash, withdrawHash(account, amount)));
-                if (userBalances[account] >= amount) {
-                    if (USDT.transfer(address(this), amount)) {
-                        uint balance = userBalances[account] - amount;
-                        userBalances[account] = balance;
-                        emit WithdrawPlayed(account, amount, balance);
+    uint public startCommitWith = 0;
+    event OutOfGasWhileReplay(uint blocknumber, uint pos);
+    
+    function playback(uint minGas, bytes32[] calldata compressedActions) external {
+        // pass 1 - check, pass2 - execute
+        bool commit = false;
+        do {
+            for (uint pos = commit ? startCommitWith : 0; pos < compressedActions.length; ) {
+                uint blocknumber = uint(compressedActions[pos++]);
+                
+                if (commit) {
+                    require(blocknumber > lastBlock, "already mined");
+                }
+                
+                uint chainlen = uint(compressedActions[pos++]);
+
+                // check for skipped nonzero blocks once, during the check pass            
+                if (commit) {
+                    for (uint i = lastBlock + 1; i < blocknumber; i++) {
+                        if (proofsByBlock[i] != 0) {
+                            revert("you skipped some nonzero blocks");
+                        }
                     }
                 }
+                bytes32 currentHash = 0;
+
+                for (uint i = 0; i < chainlen; i++) {
+                    if (commit && (gasleft() < minGas)) {
+                        startCommitWith = pos;
+                        emit OutOfGasWhileReplay(blocknumber, pos);
+                        return;
+                    }
+                    bytes32 action = compressedActions[pos++];
+                    
+                    if (action == bytes32("deposit")) {
+                        address account = address(uint256(compressedActions[pos++]));
+                        uint amount = uint(compressedActions[pos++]);
+                        if (commit) {
+                            uint balance = userBalances[account] + amount;
+                            userBalances[account] = balance;
+                            emit DepositPlayed(account, amount, balance);
+                        } else {
+                            currentHash = keccak256(abi.encodePacked(currentHash, depositHash(account, amount)));
+                        }
+                    }
+                    
+                    if (action == bytes32("withdraw")) {
+                        address account = address(uint256(compressedActions[pos++]));
+                        uint amount = uint(compressedActions[pos++]);
+                        if (commit) {
+                            if (userBalances[account] >= amount) {
+                                if (USDT.transfer(address(this), amount)) {
+                                    uint balance = userBalances[account] - amount;
+                                    userBalances[account] = balance;
+                                    emit WithdrawPlayed(account, amount, balance);
+                                } else {
+                                    emit WithdrawPlayFailed(account, amount);
+                                }
+                            } else {
+                                currentHash = keccak256(abi.encodePacked(currentHash, withdrawHash(account, amount)));
+                            }
+                        }
+                    }
+                    
+                    if (action == bytes32("bet")) {
+                        address account = address(uint256(compressedActions[pos++]));
+                        uint64 eventid = uint64(uint(compressedActions[pos++]));
+                        uint64 subevent = uint64(uint(compressedActions[pos++]));
+                        uint64 amount = uint64(uint(compressedActions[pos++]));
+                        uint64 odds = uint64(uint(compressedActions[pos++]));
+                        bool side = uint(compressedActions[pos++]) != 0;
+                        uint hint_add_odds_this = uint(compressedActions[pos++]);
+                        if (commit) {
+                            if (tryDoBet(account, eventid, subevent, amount, odds, side, hint_add_odds_this)) {
+                                emit BetPlayed(account, eventid, subevent, amount, odds, side);
+                            } else {
+                                emit BetPlayFailed(account, eventid, subevent, amount, odds, side);
+                            }
+                        } else {
+                            currentHash = keccak256(abi.encodePacked(currentHash, betHash(account, eventid, subevent, amount, odds, side)));
+                        }
+                        
+                    }
+                }
+                if (commit) {
+                    startCommitWith = 0;
+                    lastBlock = blocknumber;
+                } else {
+                    require(currentHash == proofsByBlock[blocknumber], "hash mismatch");
+                }
             }
-            
-            if (action == bytes32("bet")) {
-                address account = address(uint160(uint256(compressedActions[pos++])));
-                uint64 eventid = uint64(uint(compressedActions[pos++]));
-                uint64 subevent = uint64(uint(compressedActions[pos++]));
-                uint64 amount = uint64(uint(compressedActions[pos++]));
-                uint64 odds = uint64(uint(compressedActions[pos++]));
-                bool side = uint(compressedActions[pos++]) == 0;
-                uint hint_add_odds_this = uint(compressedActions[pos++]);
-                currentHash = keccak256(abi.encodePacked(currentHash, betHash(account, eventid, subevent, amount, odds, side)));
-                tryDoBet(account, eventid, subevent, amount, odds, side, hint_add_odds_this);
-                
-            }
-        }
-        if (targetHash != currentHash) {
-            revert("proof hash does not match");
-        }
+        commit = !commit;
+        } while (commit != false);
     }
-    
+
     function addActionProof(bytes32 hash) internal {
         proofsByBlock[block.number] = keccak256(abi.encodePacked(proofsByBlock[block.number], hash));
     }
