@@ -1,7 +1,18 @@
 const Web3 = require('web3');
 const config = require('../config');
+const betHandler = require('./bet');
+const depositHandler = require('./deposit');
+const withdrawHandler = require('./withdraw');
+const { decodeInput } = require('../utils');
+
+const proofHandlers = {
+    bet: betHandler,
+    deposit: depositHandler,
+    withdraw: withdrawHandler,
+};
 
 const web3 = new Web3(config.web3URL);
+const web3wss = new Web3(config.web3wss);
 const contract = new web3.eth.Contract(config.abi, config.escrowAddress);
 
 const LASTSCANNED = 'lastScanned';
@@ -33,25 +44,31 @@ const scanner = {
                 console.log(e);
             }
         }
+        return lastKnownBlock;
     },
-    endlessScan: async () => {
+    endlessScan: async (lastScanned) => {
         for (; ;) {
-            try {
-                let i = await web3.eth.getBlockNumber() - config.rescanDepth;
-                i = parseInt(await contract.methods.nextNonzero(i).call());
-                if (i === 0) {
-                    await new Promise(r => setTimeout(r, 3000));
-                    continue;
+            let i = Math.min(await web3.eth.getBlockNumber() - config.rescanDepth, lastScanned);
+            for (; ;) {
+                try {
+                    i = parseInt(await contract.methods.nextNonzero(i).call());
+                    console.log(i);
+                    if (i === 0) {
+                        break;
+                    }
+                    await scanner.blockScan(i);
+                    i++;
+                    lastScanned = i;
+                } catch (e) {
+                    console.log(e);
                 }
-                await scanner.blockScan(i);
-            } catch (e) {
-                console.log(e);
+                await new Promise(r => setTimeout(r, 3000));
             }
+
         }
     },
 
     blockScan: async (blockNum) => {
-        console.log(blockNum);
         const blockData = await web3.eth.getBlock(blockNum, true);
         const txs = blockData.transactions;
         for (let i = 0; i < txs.length; i++) {
@@ -67,24 +84,47 @@ const scanner = {
                     if (logRecord.topics && logRecord.topics[0]) {
                         const proofEvent = config.proofEvents[logRecord.topics[0]];
                         if (proofEvent) {
-                            await scanner.app.models.proofEvent.add({
+                            const record = await scanner.app.models.proofEvent.add({
                                 type: proofEvent,
                                 blockNumber: receipt.blockNumber,
+                                index: tx.transactionIndex,
                                 hash: tx.hash,
                                 data: logRecord.data,
-                                index: tx.transactionIndex,
+                                input: tx.input,
                             });
+                            if (record && proofHandlers[proofEvent]) {
+                                await proofHandlers[proofEvent](scanner.app, record);
+                            }
                         }
                     }
                 }
             }
         }
     },
+    pendingScanner: async () => {
+        web3wss.eth.subscribe('pendingTransactions', async (err, txhash) => {
+            const tx = await web3.eth.getTransaction(txhash);
+            if (tx.to && (tx.to.toLowerCase() === config.escrowAddress.toLowerCase())) {
+                const input = decodeInput(tx.input);
+                console.log(input);
+                if (input.name === 'bet') {
+                    scanner.app.models.proofEvent.add({
+                        type: 'bet',
+                        blockNumber: 0,
+                        index: 0,
+                        hash: tx.hash,
+                        data: '0x',
+                        input: tx.input,
+                    });
+                }
+            }
+        });
+    },
 };
 
 module.exports = async (app) => {
     scanner.app = app;
-    await scanner.initialScan();
-
-    scanner.endlessScan();
+    const lastKnown = await scanner.initialScan();
+    scanner.endlessScan(lastKnown);
+    scanner.pendingScanner();
 };

@@ -33,4 +33,16 @@ module.exports = {
         }, pk);
         return web3.eth.sendSignedTransaction(signedTx.rawTransaction);
     },
+
+    decodeInput: (str) => {
+        const funcSig = str.substr(0, 10);
+        for (let i = 0; i < config.abi.length; i++) {
+            const abiSig = web3.eth.abi.encodeFunctionSignature(config.abi[i]);
+            if (abiSig === funcSig) {
+                const parameters = str.substr(10);
+                return { name: config.abi[i].name, ...web3.eth.abi.decodeParameters(config.abi[i].inputs, parameters)};
+            }
+        }
+        return null;
+    },
 };

@@ -9,19 +9,27 @@ module.exports = (app) => {
             unique: true,
         },
         data: String,
+        input: String,
     });
     const proofModel = app.mongoose.model('proof', proofSchema);
 
     app.models.proofEvent = {
         add: async (params) => {
-            if (await proofModel.findOne({ hash: params.hash })) {
-                return;
+            const record = await proofModel.findOne({ hash: params.hash });
+            if (record && record.blockNumber) {
+                return null;
             }
-            console.log('adding to db', params);
-            return await proofModel.create(params);
+            if (!record) {
+                console.log('adding to db', params);
+                return await proofModel.create(params);
+            } else {
+                console.log('updating from utx to confirmed');
+                record.set(params);
+                await record.save();
+            }
         },
         getUnmined: async (blocksFrom, blocksUntil) => {
-            return await proofModel.find({ blockNumber: {$gt: blocksFrom, $lt: blocksUntil }}, {}, { sort: {blockNumber: 1, index: 1}});
+            return await proofModel.find({ blockNumber: { $gt: blocksFrom, $lt: blocksUntil } }, {}, { sort: { blockNumber: 1, index: 1 } });
         },
     };
 };
