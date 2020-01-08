@@ -1,15 +1,7 @@
 const Web3 = require('web3');
 const config = require('../config');
-const betHandler = require('./bet');
-const depositHandler = require('./deposit');
-const withdrawHandler = require('./withdraw');
-const { decodeInput } = require('../utils');
 
-const proofHandlers = {
-    bet: betHandler,
-    deposit: depositHandler,
-    withdraw: withdrawHandler,
-};
+const { decodeInput } = require('../utils');
 
 const web3 = new Web3(config.web3URL);
 const web3wss = new Web3(config.web3wss);
@@ -52,7 +44,6 @@ const scanner = {
             for (; ;) {
                 try {
                     i = parseInt(await contract.methods.nextNonzero(i).call());
-                    console.log(i);
                     if (i === 0) {
                         break;
                     }
@@ -92,9 +83,6 @@ const scanner = {
                                 data: logRecord.data,
                                 input: tx.input,
                             });
-                            if (record && proofHandlers[proofEvent]) {
-                                await proofHandlers[proofEvent](scanner.app, record);
-                            }
                         }
                     }
                 }
@@ -104,14 +92,13 @@ const scanner = {
     pendingScanner: async () => {
         web3wss.eth.subscribe('pendingTransactions', async (err, txhash) => {
             const tx = await web3.eth.getTransaction(txhash);
-            if (tx.to && (tx.to.toLowerCase() === config.escrowAddress.toLowerCase())) {
+            if (tx && tx.to && (tx.to.toLowerCase() === config.escrowAddress.toLowerCase())) {
                 const input = decodeInput(tx.input);
-                console.log(input);
                 if (input.name === 'bet') {
                     scanner.app.models.proofEvent.add({
                         type: 'bet',
                         blockNumber: 0,
-                        index: 0,
+                        index: -tx.gasPrice,
                         hash: tx.hash,
                         data: '0x',
                         input: tx.input,
@@ -120,6 +107,34 @@ const scanner = {
             }
         });
     },
+    recheckLastTx: async () => {
+        for (;;) {
+            try {
+                const lastKnown = await web3.eth.getBlockNumber();
+                const lastTxs = await scanner.app.models.proofEvent.getLastTx(lastKnown - config.rescanDepth);
+                if (!lastTxs) {
+                    continue;
+                }
+                for (let i = 0; i < lastTxs.length; i++) {
+                    const txHash = lastTxs[i].hash;
+                    const tx = await web3.eth.getTransaction(txHash);
+                    if (!tx) {
+                        console.log('disappeared', txHash);
+                        await scanner.app.models.proofEvent.dismiss(txHash);
+                    } else {
+                        const receipt = await web3.eth.getTransactionReceipt(txHash);
+                        if (!receipt.status) {
+                            console.log('failed', txHash);
+                            await scanner.app.models.proofEvent.dismiss(txHash);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log(e);
+            }
+            await new Promise(r => setTimeout(r, 10000));
+        }
+    }
 };
 
 module.exports = async (app) => {
@@ -127,4 +142,5 @@ module.exports = async (app) => {
     const lastKnown = await scanner.initialScan();
     scanner.endlessScan(lastKnown);
     scanner.pendingScanner();
+    scanner.recheckLastTx();
 };

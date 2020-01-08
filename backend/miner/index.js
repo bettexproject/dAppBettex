@@ -7,6 +7,19 @@ const contract = new web3.eth.Contract(config.abi, config.escrowAddress);
 const senderAccount = web3.eth.accounts.privateKeyToAccount(config.privKey);
 
 const miner = {
+    sendCompressed: async (compressedActions) => {
+        const callData = contract.methods.playback(1000000, compressedActions).encodeABI();
+        const nonce = await web3.eth.getTransactionCount(senderAccount.address);
+        return await callContract(config.escrowAddress,
+            0,
+            callData,
+            nonce,
+            3000000,
+            Math.round(0.000000010 * 10 ** 18), // TODO dynamic gas price
+            config.privKey)
+            .catch(console.log);
+
+    },
     endlessScan: async () => {
         for (; ;) {
             const lastMined = parseInt(await contract.methods.lastBlock().call());
@@ -17,26 +30,20 @@ const miner = {
             }
 
             const pendingProofs = await miner.app.models.proofEvent.getUnmined(lastMined, lastKnown - config.confirmations);
-            if (pendingProofs.length > 0) {
-                const compressedActions = miner.serializeProofs(pendingProofs);
-                const callData = contract.methods.playback(1000000, compressedActions).encodeABI();
-                console.log(compressedActions);
-                // process.exit();
-                const nonce = await web3.eth.getTransactionCount(senderAccount.address);
-                await callContract(config.escrowAddress,
-                    0,
-                    callData,
-                    nonce,
-                    3000000,
-                    Math.round(0.000000010 * 10 ** 18), // TODO dynamic gas price
-                    config.privKey)
-                    .catch(console.log);
+            if ((pendingProofs.length > 0) || (lastKnown - lastMined > config.maxEmptyPerRequest)) {
+                const compressedActions = miner.serializeProofs(pendingProofs, lastMined + config.maxEmptyPerRequest);
+                await miner.sendCompressed(compressedActions);
+            } else if (lastKnown - lastMined > config.forceMineEmpty) {
+                const compressedActions = [];
+                compressedActions.push(`0x${uint2bytes32(lastMined + config.forceMineEmpty)}`);
+                compressedActions.push(`0x${uint2bytes32(0)}`);
+                await miner.sendCompressed(compressedActions);    
             }
         }
     },
-    serializeProofs: (proofs) => {
-        const byBlocks = {};
-        const blockNumbers = [];
+    serializeProofs: (proofs, breakOnBlock) => {
+        let byBlocks = {};
+        let blockNumbers = [];
         const compressedData = [];
 
         proofs.forEach(element => {
@@ -46,6 +53,13 @@ const miner = {
             }
             byBlocks[element.blockNumber].push(element);
         });
+
+        // serialize to empty action on too long
+        if (blockNumbers[0] > breakOnBlock) {
+            blockNumbers = [breakOnBlock];
+            byBlocks = {};
+            byBlocks[breakOnBlock] = [];
+        }
 
         console.log(byBlocks, blockNumbers);
 
