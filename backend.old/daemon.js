@@ -60,8 +60,6 @@ const sendProofsChains = async (proofEvents, force, currentBlock) => {
     }
 
     const callData = contract.methods.playback(minBlock || currentBlock, 1000000, compressedActions).encodeABI();
-    console.log(callData);
-    // process.exit();
     const nonce = await web3.eth.getTransactionCount(senderAccount.address);
     await callContract(config.escrowAddress,
         0,

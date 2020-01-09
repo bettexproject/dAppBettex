@@ -17,9 +17,11 @@ const scanner = {
         );
 
         let lastKnownBlock = await web3.eth.getBlockNumber();
+        scanner.app.currentHeight = lastKnownBlock;
 
         for (i = scanStartPoint; ;) {
             try {
+                console.log(i);
                 if (i > lastKnownBlock) {
                     lastKnownBlock = await web3.eth.getBlockNumber();
                     if (i > lastKnownBlock) {
@@ -32,6 +34,7 @@ const scanner = {
                 }
                 await scanner.blockScan(i);
                 i++;
+                await scanner.app.models.config.set(LASTSCANNED, i);
             } catch (e) {
                 console.log(e);
             }
@@ -40,7 +43,9 @@ const scanner = {
     },
     endlessScan: async (lastScanned) => {
         for (; ;) {
-            let i = Math.min(await web3.eth.getBlockNumber() - config.rescanDepth, lastScanned);
+            const lastKnown = await web3.eth.getBlockNumber();
+            let i = Math.min(lastKnown - config.rescanDepth, lastScanned);
+            scanner.app.currentHeight = lastKnown;
             for (; ;) {
                 try {
                     i = parseInt(await contract.methods.nextNonzero(i).call());
@@ -80,6 +85,7 @@ const scanner = {
                                 blockNumber: receipt.blockNumber,
                                 index: tx.transactionIndex,
                                 hash: tx.hash,
+                                account: tx.from && tx.from.toLowerCase(),
                                 data: logRecord.data,
                                 input: tx.input,
                             });
@@ -101,6 +107,7 @@ const scanner = {
                         index: -tx.gasPrice,
                         hash: tx.hash,
                         data: '0x',
+                        account: tx.from && tx.from.toLowerCase(),
                         input: tx.input,
                     });
                 }
@@ -111,6 +118,7 @@ const scanner = {
         for (;;) {
             try {
                 const lastKnown = await web3.eth.getBlockNumber();
+                scanner.app.currentHeight = lastKnown;
                 const lastTxs = await scanner.app.models.proofEvent.getLastTx(lastKnown - config.rescanDepth);
                 if (!lastTxs) {
                     continue;
@@ -123,7 +131,7 @@ const scanner = {
                         await scanner.app.models.proofEvent.dismiss(txHash);
                     } else {
                         const receipt = await web3.eth.getTransactionReceipt(txHash);
-                        if (!receipt.status) {
+                        if (receipt && !receipt.status) {
                             console.log('failed', txHash);
                             await scanner.app.models.proofEvent.dismiss(txHash);
                         }
@@ -143,4 +151,6 @@ module.exports = async (app) => {
     scanner.endlessScan(lastKnown);
     scanner.pendingScanner();
     scanner.recheckLastTx();
+
+    app.models.snap.update();
 };

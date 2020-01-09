@@ -55,14 +55,12 @@ const miner = {
         });
 
         // serialize to empty action on too long
-        if (blockNumbers[0] > breakOnBlock) {
+        if (!blockNumbers.length || (blockNumbers[0] > breakOnBlock)) {
             blockNumbers = [breakOnBlock];
             byBlocks = {};
             byBlocks[breakOnBlock] = [];
         }
-
-        console.log(byBlocks, blockNumbers);
-
+        
         blockNumbers.forEach(blockNumber => {
             const chainLength = byBlocks[blockNumber].length;
             compressedData.push(`0x${uint2bytes32(blockNumber)}`);

@@ -8,7 +8,6 @@ module.exports = {
 
     uint2bytes32: (uint) => {
         const unpadded = (new BigNumber(uint).toString(16));
-        console.log(uint, unpadded)
         return `${'0000000000000000000000000000000000000000000000000000000000000000'.substr(0, 64 - unpadded.length)}${unpadded}`;
     },
 
