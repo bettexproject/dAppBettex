@@ -75,6 +75,7 @@ contract BettexEth is usingProvable {
         uint64 amount;
         uint64 odds;
         uint64 matched;
+        uint64 matched_peer;
         uint64 cancelled;
     }
     
@@ -83,7 +84,7 @@ contract BettexEth is usingProvable {
     
     function allBets_add(address owner, bool side, uint64 eventid, uint64 subevent, uint64 amount, uint64 odds) internal {
         ++allBetsSeq;
-        allBets[allBetsSeq] = BetItem(owner, side, eventid, subevent, amount, odds, 0, 0);
+        allBets[allBetsSeq] = BetItem(owner, side, eventid, subevent, amount, odds, 0, 0, 0);
     }
     
     function BetsForEvent_consumeTop(SortedIteratorHelper storage oppositeSide, BetItem storage betThisSide) internal {
@@ -106,9 +107,11 @@ contract BettexEth is usingProvable {
             uint spentFor = maxNominal * ODDS_PRECISION / (oddsToMatch - ODDS_PRECISION);
             uint spentAgainst = maxNominal;
             betFor.matched += uint64(spentFor);
+            betFor.matched_peer += uint64(spentAgainst);
             betAgainst.matched += uint64(spentAgainst);
+            betAgainst.matched_peer += uint64(spentFor);
             
-            if (betThisSide.amount - betThisSide.matched - betThisSide.cancelled < 10**3) {
+            if (betThisSide.amount - betThisSide.matched - betThisSide.cancelled < 10) {
                 betThisSide.amount = betThisSide.matched + betThisSide.cancelled;
                 break;
             }

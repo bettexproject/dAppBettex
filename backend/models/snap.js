@@ -1,6 +1,7 @@
 const config = require('../config');
 const { decodeInput } = require('../utils');
 
+const ODDS_PRECISION = 1000;
 
 module.exports = (app) => {
     const snapSchema = new app.mongoose.Schema({
@@ -11,6 +12,34 @@ module.exports = (app) => {
     const snapModel = app.mongoose.model('Snap', snapSchema);
 
     const snap = {
+        consumeOpposite: (list, betIndex, allBets) => {
+            const thisBet = allBets[betIndex];
+            const sortValue = thisBet.odds;
+            const direction = thisBet.side;
+            for (let i = 0; i < list.length; i++) {
+                const thatBet = allBets[list[i]];
+                const placeValue = thatBet.odds;
+                if (
+                    (!direction && (placeValue > sortValue)) ||
+                    (direction && (placeValue < sortValue))
+                ) {
+                    break;
+                }
+                const betFor = direction ? thisBet : thatBet;
+                const betAgainst = !direction ? thisBet : thatBet;
+                const oddsToMatch = betFor.odds;
+                const maxFor = (betFor.amount - betFor.matched - betFor.cancelled) * (oddsToMatch - ODDS_PRECISION) / ODDS_PRECISION;
+                const maxAgainst = (betAgainst.amount - betAgainst.matched - betAgainst.cancelled);
+                const maxNominal = maxFor < maxAgainst ? maxFor : maxAgainst;
+                const spentFor = maxNominal * ODDS_PRECISION / (oddsToMatch - ODDS_PRECISION);
+                const spentAgainst = maxNominal;
+                betFor.matched += spentFor;
+                betFor.matched_peer += spentAgainst;
+                betAgainst.matched += spentAgainst;
+                betAgainst.matched_peer += spentFor
+            }
+        },
+
         insertValue: (list, index, allBets) => {
             const sortValue = allBets[index].odds;
             const direction = allBets[index].side;
@@ -50,6 +79,9 @@ module.exports = (app) => {
                         amount: input.amount,
                         odds: input.odds,
                         side: input.side,
+                        matched: 0,
+                        matched_peer: 0,
+                        cancelled: 0,
                     });
                     const betIndex = state.allBets.length - 1;
                     state.eventStacks[eventKey] = state.eventStacks[eventKey] || {
@@ -67,7 +99,8 @@ module.exports = (app) => {
                     } else {
                         state.eventStacks[eventKey].betsAgainst = newThisSide;
                     }
-                    // consume opposite TODO
+                    // consume opposite
+                    snap.consumeOpposite(oppositeSide, betIndex, state.allBets);
 
                 }
             }
