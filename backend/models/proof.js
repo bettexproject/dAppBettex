@@ -46,7 +46,7 @@ module.exports = (app) => {
         },
         txsFrom: async (blocksFrom) => {
             const txs = await proofModel.find({ $or: [{ blockNumber: { $gt: blocksFrom } }, { blockNumber: { $eq: 0 } }] }, {}, { sort: { blockNumber: 1, index: 1 } });
-            if (txs) {
+            if (!txs) {
                 return txs;
             }
             const resultTxs = [];
