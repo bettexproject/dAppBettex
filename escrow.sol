@@ -79,8 +79,7 @@ contract BettexEth is usingProvable {
     }
     
     mapping (uint => BetItem) public allBets;
-
-    uint allBetsSeq;
+    uint public allBetsSeq;
     
     function allBets_add(address owner, bool side, uint64 eventid, uint64 subevent, uint64 amount, uint64 odds) internal {
         ++allBetsSeq;
@@ -163,6 +162,7 @@ contract BettexEth is usingProvable {
         }
         return 0;
     }
+
     
     /* playback of actions */
     
@@ -224,9 +224,9 @@ contract BettexEth is usingProvable {
                                 } else {
                                     emit WithdrawPlayFailed(account, amount);
                                 }
-                            } else {
-                                currentHash = keccak256(abi.encodePacked(currentHash, withdrawHash(account, amount)));
                             }
+                        } else {
+                            currentHash = keccak256(abi.encodePacked(currentHash, withdrawHash(account, amount)));
                         }
                     }
                     

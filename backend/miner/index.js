@@ -67,23 +67,29 @@ const miner = {
             compressedData.push(`0x${uint2bytes32(chainLength)}`);
 
             byBlocks[blockNumber].forEach(chainItem => {
-                if (
-                    chainItem.type === 'deposit' ||
-                    chainItem.type === 'withdraw' ||
-                    chainItem.type === 'bet'
-                ) {
+                if (chainItem.type === 'deposit') {
                     compressedData.push(`0x${str2bytes32(chainItem.type)}`);
-                    for (let j = 2 + 64; j < chainItem.data.length; j += 64) {
+                    for (let j = 2 + 64; j < 2 + 64 + 2*64; j += 64) {
                         compressedData.push(`0x${chainItem.data.substr(j, 64)}`);
                     }
-                    if (chainItem.type === 'bet') {
-                        // add hint
-                        compressedData.push(`0x${uint2bytes32(0)}`);
+                }
+                if (chainItem.type === 'withdraw') {
+                    compressedData.push(`0x${str2bytes32(chainItem.type)}`);
+                    for (let j = 2 + 64; j < 2 + 64 + 2*64; j += 64) {
+                        compressedData.push(`0x${chainItem.data.substr(j, 64)}`);
                     }
-
+                }
+                if (chainItem.type === 'bet') {
+                    compressedData.push(`0x${str2bytes32(chainItem.type)}`);
+                    for (let j = 2 + 64; j < 2 + 64 + 6*64; j += 64) {
+                        compressedData.push(`0x${chainItem.data.substr(j, 64)}`);
+                    }
+                    compressedData.push(`0x${uint2bytes32(0)}`);
                 }
             });
         });
+
+        console.log(compressedData);
 
         return compressedData;
     },

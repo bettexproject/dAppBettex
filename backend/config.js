@@ -6,10 +6,11 @@ module.exports = {
     web3URL: 'https://ropsten.infura.io/v3/177808a3ebca4e57b5847081b0b22ced',
     web3wss: 'wss://ropsten.infura.io/ws',
 
-    escrowAddress: '0x41d2C4890353D98BE8E12a7D5301D32837293bB8',
+    escrowAddress: '0x7fA102B2a4c7a1B8673E1A9788c1fc38Fb0F7DEE',
     proofEvents: {
         '0x92044645a95d9bb19c5fc216e5be180a47a434f0aeb5263c9a36c38f9ad65325': 'bet',
         '0xeaa18152488ce5959073c9c79c88ca90b3d96c00de1f118cfaad664c3dab06b9': 'deposit',
+        '0x9da6493a92039daf47d1f2d7a782299c5994c6323eb1e972f69c432089ec52bf': 'withdraw',
     },
     rescanDepth: 10,
     confirmations: 1,
