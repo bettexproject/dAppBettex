@@ -205,7 +205,6 @@
       },
     },
     mounted() {
-      this.fetchMyBetsExtended();
     },
   };
 </script>

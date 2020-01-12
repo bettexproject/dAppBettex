@@ -57,31 +57,25 @@
         }
         return {name: ROUTE.categoryTop, params: {}};
       },
-      loadDisplayedEvents() {
-        this.fetchEvents(this.activeSport);
-      },
     },
     mounted() {
       // this.fetchEvents();
-      refreshTimeout = setInterval(() => {
-        this.loadDisplayedEvents()
-      }, config.eventsUpdateInterval);
     },
     beforeDestroy() {
       clearInterval(refreshTimeout);
     },
     watch: {
-      $route: {
-        handler() {
-          const newSport = this.$route.params.sport || config.topCategories[0].name;
-          if (newSport !== this.activeSport) {
-            this.activeSport = newSport;
-            this.loadDisplayedEvents();
-          }
-          this.activeCountry = this.$route.params.country || '';
-        },
-        immediate: true
-      },
+      // $route: {
+      //   handler() {
+      //     const newSport = this.$route.params.sport || config.topCategories[0].name;
+      //     if (newSport !== this.activeSport) {
+      //       this.activeSport = newSport;
+      //       // this.loadDisplayedEvents();
+      //     }
+      //     this.activeCountry = this.$route.params.country || '';
+      //   },
+      //   immediate: true
+      // },
     },
   };
 </script>

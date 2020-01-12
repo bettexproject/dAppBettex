@@ -49,34 +49,17 @@
     computed: {
       ...mapGetters(['getDepositTransactions']),
       itemsSorted() {
-        return this.extend(_.sortBy(this.getDepositTransactions, item => -item.time));
+        return _.sortBy(this.getDepositTransactions, item => -item.time);
       },
     },
     methods: {
-      ...mapActions(['makeDeposit', 'unlockDeposit', 'fetchDepositTransactions']),
+      ...mapActions(['makeDeposit', 'unlockDeposit']),
       doMakeDeposit() {
         this.makeDeposit(this.amount);
-      },
-      clearFetcher() {
-        fetcher && clearInterval(fetcher);
-      },
-      extend(items) {
-        return _.map(items, item => ({
-          ...item,
-          in: Buffer.from(config.Waves.tools.base58.decode(item.txid)).toString('hex').substring(0, 64),
-        }));
       },
     },
     data() {
       return { amount: 0 };
-    },
-    mounted() {
-      fetcher = setInterval(() => {
-      }, config.depositAddressInterval);
-      this.fetchDepositTransactions();
-    },
-    beforeDestroy() {
-      this.clearFetcher();
     },
   };
 </script>

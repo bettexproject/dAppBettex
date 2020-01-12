@@ -25,7 +25,8 @@
     "vue-notification": "^1.3.16",
     "vue-router": "^3.0.3",
     "vue-vanilla-datetime-picker": "^1.1.15",
-    "vuex": "^3.0.1"
+    "vuex": "^3.0.1",
+    "web3": "^1.2.4"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.9.0",

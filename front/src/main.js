@@ -36,21 +36,17 @@ Vue.filter('btxcExporer', (data, params) => {
 
 store.dispatch('fetchPayouts');
 
-setInterval(() => {
-  store.dispatch('fetchMyBetsExtended');
-}, config.fetchMyBetsInterval);
-
 const dexJudgeTrigger = () => {
-  store.dispatch('sendDexJudge')
-    .then(changes => changes && store.dispatch('fetchMyBetsExtended'))
-    .then(() => {
-      setTimeout(() => dexJudgeTrigger(), config.eventsUpdateInterval);
-    })
-    .catch(() => {
-      setTimeout(() => dexJudgeTrigger(), config.eventsUpdateInterval);
-    });
+  // store.dispatch('sendDexJudge')
+    // .then(changes => changes && store.dispatch('fetchMyBetsExtended'))
+    // .then(() => {
+      // setTimeout(() => dexJudgeTrigger(), config.eventsUpdateInterval);
+    // })
+    // .catch(() => {
+      // setTimeout(() => dexJudgeTrigger(), config.eventsUpdateInterval);
+    // });
 };
 
-dexJudgeTrigger();
+// dexJudgeTrigger();
 
 

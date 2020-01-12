@@ -49,9 +49,9 @@ export default {
   },
   actions: {
     loadInitialData({dispatch}) {
-      dispatch('fetchDelegate');
-      dispatch('fetchBalance');
-      dispatch('fetchMyBetsExtended');
+      // dispatch('fetchDelegate');
+      // dispatch('fetchBalance');
+      // dispatch('fetchMyBetsExtended');
     },
     fetchDelegate({commit, getters, dispatch}) {
       return API.fetchDelegateStatus(getters.getAddress)

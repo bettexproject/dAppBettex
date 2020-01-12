@@ -116,12 +116,12 @@
       },
     },
     watch: {
-      $route: {
-        handler() {
-          this.setEventFilter(this.$route.params);
-        },
-        immediate: true,
-      },
+      // $route: {
+      //   handler() {
+      //     this.setEventFilter(this.$route.params);
+      //   },
+      //   immediate: true,
+      // },
       getEventTreePaginated() {
         const ids = [];
 

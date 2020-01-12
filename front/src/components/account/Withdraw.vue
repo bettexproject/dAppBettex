@@ -94,24 +94,12 @@
       doWithdraw() {
         this.withdraw({address: this.withdrawAddress, amount: this.withdrawAmount});
       },
-      clearFetcher() {
-        fetcher && clearInterval(fetcher);
-      },
     },
     data() {
       return {
         withdrawAddress: '',
         withdrawAmount: '',
       };
-    },
-    mounted() {
-      fetcher = setInterval(() => {
-        this.fetchWithdrawTransactions();
-      }, config.depositAddressInterval);
-      this.fetchWithdrawTransactions();
-    },
-    beforeDestroy() {
-      this.clearFetcher();
     },
   };
 </script>

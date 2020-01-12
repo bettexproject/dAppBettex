@@ -27,6 +27,10 @@ export default {
         logout({ commit }) {
             commit('setAuth', null);
         },
+
+        makeDeposit({ getters }, amount) {
+            api.makeDeposit(getters.getAuth, amount);
+        },
     },
     getters: {
         getAuth: state => state.auth,
