@@ -1,10 +1,10 @@
 <template>
-  <div v-if="getEventTree">
-    <div v-for="sport in topCategories" :key="sport" class="sidebar-sport">
+  <div v-if="getCategories">
+    <div v-for="(sportData, sport) in getCategories" :key="sport" class="sidebar-sport">
       <div class="sidebar-sport-title">
         <RouterLink class="sidebar-sport-title-link" :to="routeParams(sport)">{{ sport }}</RouterLink>
-      </div>
-      <div v-if="activeSport === sport" v-for="(country) in (getEventTree[sport] || {}).countries"
+      </div> 
+      <div v-for="(country) in (sportData || {}).countries"
            :key="country.country" class="sidebar-country-container">
         <div class="sidebar-country-title">
           <RouterLink class="sidebar-country-title-link" :to="routeParams(sport, country.country)">
@@ -41,7 +41,7 @@
       }
     },
     computed: {
-      ...mapGetters(['getEventTree']),
+      ...mapGetters(['getCategories']),
     },
     methods: {
       ...mapActions(['fetchEvents']),
@@ -65,17 +65,17 @@
       clearInterval(refreshTimeout);
     },
     watch: {
-      // $route: {
-      //   handler() {
-      //     const newSport = this.$route.params.sport || config.topCategories[0].name;
-      //     if (newSport !== this.activeSport) {
-      //       this.activeSport = newSport;
-      //       // this.loadDisplayedEvents();
-      //     }
-      //     this.activeCountry = this.$route.params.country || '';
-      //   },
-      //   immediate: true
-      // },
+      $route: {
+        handler() {
+          const newSport = this.$route.params.sport || config.topCategories[0].name;
+          if (newSport !== this.activeSport) {
+            this.activeSport = newSport;
+            // this.loadDisplayedEvents();
+          }
+          this.activeCountry = this.$route.params.country || '';
+        },
+        immediate: true
+      },
     },
   };
 </script>

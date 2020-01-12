@@ -1,3 +1,5 @@
+const _ = require('lodash');
+
 module.exports = (app) => {
     const sportrSchema = new app.mongoose.Schema({
         external_id: {
@@ -56,6 +58,20 @@ module.exports = (app) => {
                 app.api.fireEvent(`onChange league ${params.sport}-${params.country}-${params.league}`, updateEvent);
                 app.api.fireEvent(`onChange event ${params.external_id}`, updateEvent);
             }
+        },
+        getCategoryTree: async() => {
+            const tree = {};
+            const allData = await sportrModel.find();
+            _.forEach(allData, item => {
+                const country = item.country;
+                const sport = item.sport;
+                const league = item.league;
+
+                tree[sport] = tree[sport] || { sport, countries: {}};
+                tree[sport].countries[country] = tree[sport].countries[country] || { country, leagues: {}};
+                tree[sport].countries[country].leagues[league] = tree[sport].countries[country].leagues[league] || { league };
+            });
+            return tree;
         },
     };
 };

@@ -3,6 +3,7 @@ import Vuex from 'vuex';
 import _ from 'lodash';
 // import events from './events';
 // import bets from './bets';
+import categories from './categories';
 import SocketClient from 'socket.io-client';
 import user from './user';
 import api from './api';
@@ -19,7 +20,7 @@ const waitForWS = async () => {
   }
 };
 
-export default new Vuex.Store({
+const store = new Vuex.Store({
   state: {
     subsriptions: {},
   },
@@ -37,6 +38,11 @@ export default new Vuex.Store({
 
       socket.on(`balance-${getters.getUserAddress}`, balance => commit('setBalance', balance));
     },
+
+    onFirstConnect({ commit }) {
+      socket.emit('load', 'categories');
+      socket.on('categories', (categories) => commit('onCategories', categories));
+    },
   },
   getters: {
     getSubscription: (state) => state.subsriptions,
@@ -45,5 +51,10 @@ export default new Vuex.Store({
     // events,
     // bets,
     user,
+    categories,
   },
-})
+});
+
+waitForWS().then(() => store.dispatch('onFirstConnect'));
+
+export default store;

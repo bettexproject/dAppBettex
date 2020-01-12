@@ -40,6 +40,10 @@ module.exports = (app) => {
                 if (what === 'balance') {
                     socket.emit(`balance-${params}`, app.models.snap.getAccountBalance(params));
                 }
+                if (what === 'categories') {
+                    app.models.sportr.getCategoryTree()
+                        .then(tree => socket.emit('categories', tree));
+                }
             });
         },
 
