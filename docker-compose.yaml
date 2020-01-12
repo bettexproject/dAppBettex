@@ -7,6 +7,14 @@ services:
       - ./backend:/code:rw
     command: sh -c 'cd /code; npm install; npm run dev'
     ports:
-      - 8080:8080
+      - 8090:8090
   mongo:
     image: mongo
+
+  front-dev:
+    build: docker/node
+    command: sh -c 'cd /front; npm install; npm run serve'
+    volumes:
+    - ./front/:/front:rw
+    ports:
+    - 8080:8080

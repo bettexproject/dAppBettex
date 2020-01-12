@@ -37,7 +37,7 @@
 <script>
   import {mapActions, mapGetters} from "vuex";
   import {ROUTE} from '../../router';
-  import {getBetTypes, getCategoryAsset} from "../../store/events";
+  // import {getBetTypes, getCategoryAsset} from "../../store/events";
   import config from '../../config/config';
 
   export default {
@@ -76,7 +76,7 @@
         return this.lock ? 'locked' : 'active';
       },
       betType() {
-        return (this.event && this.value && this.value.subevent && getBetTypes(this.event)[this.value.subevent].name);
+        // return (this.event && this.value && this.value.subevent && getBetTypes(this.event)[this.value.subevent].name);
       },
       isOddsValid() {
         return (this.odds.toString() === parseFloat(this.odds).toString())

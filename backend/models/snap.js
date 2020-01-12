@@ -1,5 +1,6 @@
 const config = require('../config');
 const { decodeInput } = require('../utils');
+const _ = require('lodash');
 
 const ODDS_PRECISION = 1000;
 
@@ -149,8 +150,18 @@ module.exports = (app) => {
             snap.currentState = await snap.lastConfirmedState();
             console.log(snap.currentState);
             console.log(snap.currentState.eventStacks);
+            _.forEach(snap.currentState.balanceOfAccount, (balance, account) => {
+                if (snap.prevBalances[account] !== balance) {
+                    snap.prevBalances[account] = balance;
+                    app.api.fireEvent(`balance-${account}`, balance);
+                }
+            });
+        },
+        getAccountBalance: (account) => {
+            return snap.prevBalances[account] || 0;
         },
         currentState: {},
+        prevBalances: {},
     };
 
 

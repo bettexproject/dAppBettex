@@ -6,6 +6,24 @@ module.exports = {
     web3URL: 'https://ropsten.infura.io/v3/177808a3ebca4e57b5847081b0b22ced',
     web3wss: 'wss://ropsten.infura.io/ws',
 
+    sports: [1, 2, 4, 5],
+    countryWhitelist: [
+        'England',
+        'France',
+        'Germany',
+        'International',
+        'International Clubs',
+        'Italy',
+        'Netherlands',
+        'Portugal',
+        'Russia',
+        'Spain',
+        'Ukraine',
+        'USA',
+        'ATP',
+        'WTA',
+      ],    
+
     // escrowAddress: '0x3B07cfAEAd145bBDf20156A4e83b8CBE29F5855B',
     escrowAddress: '0x78044fB5ADAA596555288B3F0F939b54C19AeFF2',
     proofEvents: {

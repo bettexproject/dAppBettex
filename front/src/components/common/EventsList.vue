@@ -68,14 +68,14 @@
   import EventSportr from './EventSportr';
   import EventDex from './EventDex';
   import DateFilter from "./DateFilter";
-  import {getCategoryAdapter} from "../../store/events";
+//  import {getCategoryAdapter} from "../../store/events";
   import Modal from '../common/Modal';
-  import AddBet from './AddBet';
+//  import AddBet from './AddBet';
   import Payouts from './Payouts';
 
 
   export default {
-    components: {EventSportr, EventDex, DateFilter, Modal, AddBet, Payouts},
+    components: {EventSportr, EventDex, DateFilter, Modal, Payouts},
     data() {
       return {
         showModal: false,
@@ -87,7 +87,7 @@
     computed: {
       ...mapGetters(['getEventTreePaginated', 'getFilteredEvents', 'getMaxPage', 'getLoading', 'getPayouts']),
       adapterFromRouting() {
-        return getCategoryAdapter(this.sportFromRouting);
+        // return getCategoryAdapter(this.sportFromRouting);
       },
       sportFromRouting() {
         return this.$route.params.sport || config.topCategories[0].name;

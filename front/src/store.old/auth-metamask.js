@@ -19,5 +19,12 @@ export default async () => {
         }, r);
       });
     },
+    // sign: async (tx) => {
+    //   if (Array.isArray(tx)) {
+    //     return await window.WavesKeeper.signTransactionPackage(tx);
+    //   } else {
+    //     return await window.WavesKeeper.signTransaction(tx);
+    //   }
+    // },
   }
 };

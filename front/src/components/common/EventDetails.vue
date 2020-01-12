@@ -95,7 +95,7 @@
 
 <script>
   import BetLine from "./BetLine";
-  import {getBetTypes} from "../../store/events";
+  // import {getBetTypes} from "../../store/events";
 
   export default {
     props: {
@@ -107,14 +107,14 @@
     components: {BetLine},
     computed: {
       filterByKey() {
-        return (reg) => {
-          const betTypes = this.event && getBetTypes(this.event);
-          const filtered = {};
-          _.forEach(betTypes, (val, key) => key.match(reg) && (filtered[key] = val));
-          return _.map(filtered, (val, key) => ({
-            subevent: key, title: val && val.name,
-          }));
-        };
+        // return (reg) => {
+        //   const betTypes = this.event && getBetTypes(this.event);
+        //   const filtered = {};
+        //   _.forEach(betTypes, (val, key) => key.match(reg) && (filtered[key] = val));
+        //   return _.map(filtered, (val, key) => ({
+        //     subevent: key, title: val && val.name,
+        //   }));
+        // };
       },
     },
   };

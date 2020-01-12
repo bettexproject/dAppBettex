@@ -42,7 +42,7 @@
   import {mapGetters} from "vuex";
   import config from '../../config/config';
   import BetPopup from './BetPopup';
-  import {sportHasDraw} from "../../store/events";
+  // import {sportHasDraw} from "../../store/events";
 
   export default {
     props: {
@@ -119,9 +119,9 @@
         };
       },
       subevents() {
-        return this.event && sportHasDraw(this.event.sport)
-            ? ["t1", 'draw', "t2"]
-            : ["t1", "t2"];
+        // return this.event && sportHasDraw(this.event.sport)
+        //     ? ["t1", 'draw', "t2"]
+        //     : ["t1", "t2"];
       },
       topOdds() {
         return (subevent, side) => {

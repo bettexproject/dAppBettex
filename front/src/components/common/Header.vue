@@ -15,9 +15,9 @@
     </div>
     <div class="menu" v-if="isLoggedIn">
       <div class="balance">
-        <span v-for="(val, asset) in balances" class="balance-item" :key="asset">
-          {{ val }}
-          <div class="asset-name">{{asset}}</div>
+        <span class="balance-item">
+          {{ getBalance }}
+          <div class="asset-name">USD</div>
         </span>
       </div>
       <router-link :to="{ name: route.account, params: { sub: 'bets' } }">Bet history</router-link>
@@ -49,11 +49,6 @@
       route() {
         return ROUTE;
       },
-      balances() {
-        const betAssets = {};
-        _.forEach(config.assetIds, (assetId, assetCode) => betAssets[assetCode] = (this.getBalance && this.getBalance[assetId]) || 0);
-        return betAssets;
-      },
       nightMode: {
         get() {
           return this.getNightMode;
@@ -64,14 +59,8 @@
       },
     },
     methods: {
-      ...mapActions(['fetchBalance', 'loginLS', 'logout']),
+      ...mapActions(['logout']),
       ...mapMutations(['setNightMode']),
-    },
-    mounted() {
-      interval = setInterval(() => {
-        this.fetchBalance();
-      }, config.balanceUpdateInterval);
-      this.fetchBalance();
     },
   }
 </script>
