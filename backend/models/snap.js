@@ -179,6 +179,5 @@ module.exports = (app) => {
         prevBetHash: {},
     };
 
-
     app.models.snap = snap;
 };

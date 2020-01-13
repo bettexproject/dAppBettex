@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import _ from 'lodash';
 import config from '../config/config';
+import { isArray } from '@waves/waves-transactions/dist/validators';
 
 const extendBets = (bets, events) => {
     return(_.map(bets, bet => {
@@ -25,7 +26,7 @@ export default {
         bets: {},
     },
     mutations: {
-        onBets: (state, val) => _.forEach(val, bet => Vue.set(state.bets, bet.hash, bet)),
+        onBets: (state, val) => _.forEach(Array.isArray(val) ? val : [val], bet => Vue.set(state.bets, bet.hash, bet)),
     },
     getters: {
         getMyBetsExtended: (state, getters) => extendBets(state.bets, getters.getEvents),
