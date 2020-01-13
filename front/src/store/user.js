@@ -31,6 +31,18 @@ export default {
         makeDeposit({ getters }, amount) {
             api.makeDeposit(getters.getAuth, amount);
         },
+
+        onLogin({ dispatch, getters, commit }) {
+            const account = getters.getUserAddress;
+            dispatch('addSocketListener', {
+                event: `balance-${account}`,
+                listener: (balance) => commit('setBalance', balance),
+            });
+            dispatch('emitSocketLoad', {
+                event: 'balance',
+                params: account,
+            });
+        },
     },
     getters: {
         getAuth: state => state.auth,

@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 import _ from 'lodash';
-// import events from './events';
+import events from './events';
 // import bets from './bets';
 import categories from './categories';
 import SocketClient from 'socket.io-client';
@@ -25,30 +25,28 @@ const store = new Vuex.Store({
     subsriptions: {},
   },
   mutations: {
-    ADD_SUBSCRIPTION: (state, val) => Vue.set(state.subsriptions, val, true),
+    ADD_SUBSCRIPTION: (state, { event, listener }) => Vue.set(state.subsriptions, event, listener),
   },
   actions: {
-    addSubscription({ getters, commit }, event) {
-      commit('ADD_SUBSCRIPTION', event);
-      socket.emit('subscribe', event);
+    addSocketListener({ commit }, { event, listener }) {
+      socket.on(event, listener);
+      commit('ADD_SUBSCRIPTION', { event, listener });
     },
-    onLogin({ dispatch, getters, commit }) {
-      dispatch('addSubscription', `balance-${getters.getUserAddress}`);
-      socket.emit('load', 'balance', getters.getUserAddress);
-
-      socket.on(`balance-${getters.getUserAddress}`, balance => commit('setBalance', balance));
+    emitSocketLoad(d, { event, params }) {
+      params ? socket.emit('load', event, params) : socket.emit('load', event);
     },
-
-    onFirstConnect({ commit }) {
-      socket.emit('load', 'categories');
-      socket.on('categories', (categories) => commit('onCategories', categories));
+    onFirstConnect({ dispatch, commit }) {
+      dispatch('addSocketListener', {
+        event: 'categories',
+        listener: (categories) => commit('onCategories', categories),
+      });
+      dispatch('emitSocketLoad', {
+        event: 'categories',
+      });
     },
-  },
-  getters: {
-    getSubscription: (state) => state.subsriptions,
   },
   modules: {
-    // events,
+    events,
     // bets,
     user,
     categories,
