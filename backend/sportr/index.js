@@ -23,7 +23,7 @@ const importForDate = async (date, app) => {
                                 }
                             });
 
-                            const external_id = `sportr:${match._id}`;
+                            const external_id = match._id;
                             data[match._id] = {
                                 sport: sportName,
                                 country: countryName,

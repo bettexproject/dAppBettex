@@ -190,7 +190,7 @@
       }
     },
     methods: {
-      ...mapActions(['fetchMyBetsExtended', 'approveDefeat', 'cancelBet', 'makePayouts', 'massApproveDefeat', 'massCancel', 'setDelegateStatus']),
+      ...mapActions(['approveDefeat', 'cancelBet', 'makePayouts', 'massApproveDefeat', 'massCancel', 'setDelegateStatus']),
       doApprove(bet, code) {
         this.approveDefeat({betid: bet.betid, code});
       },

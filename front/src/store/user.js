@@ -42,6 +42,17 @@ export default {
                 event: 'balance',
                 params: account,
             });
+
+            dispatch('addSocketListener', {
+                event: `bets-${account}`,
+                listener: (bets) => commit('onBets', bets),
+            });
+            dispatch('emitSocketLoad', {
+                event: 'bets',
+                params: account,
+            });
+
+            
         },
     },
     getters: {

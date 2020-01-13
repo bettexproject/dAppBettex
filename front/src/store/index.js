@@ -2,7 +2,7 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import _ from 'lodash';
 import events from './events';
-// import bets from './bets';
+import bets from './bets';
 import categories from './categories';
 import SocketClient from 'socket.io-client';
 import user from './user';
@@ -49,7 +49,7 @@ const store = new Vuex.Store({
   },
   modules: {
     events,
-    // bets,
+    bets,
     user,
     categories,
   },

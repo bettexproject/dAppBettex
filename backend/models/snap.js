@@ -73,7 +73,7 @@ module.exports = (app) => {
                 if (state.balanceOfAccount[tx.account] >= input.amount) {
                     state.balanceOfAccount[tx.account] -= input.amount;
                     const eventKey = `${input.eventid}-${input.subevent}`;
-                    state.allBets.push({
+                    const bet = {
                         account: tx.account,
                         eventid: input.eventid,
                         subevent: input.eventid,
@@ -83,7 +83,10 @@ module.exports = (app) => {
                         matched: 0,
                         matched_peer: 0,
                         cancelled: 0,
-                    });
+                        hash: tx.hash,
+                    };
+
+                    state.allBets.push(bet);
                     const betIndex = state.allBets.length - 1;
                     state.eventStacks[eventKey] = state.eventStacks[eventKey] || {
                         betsFor: [],
@@ -147,10 +150,8 @@ module.exports = (app) => {
             return await snap.replay(fromBlock);
         },
         update: async () => {
+            console.log('update');
             snap.currentState = await snap.lastConfirmedState();
-            console.log(snap.currentState);
-            console.log(snap.prevBalances);            
-            console.log(snap.currentState.eventStacks);
             _.forEach(snap.currentState.balanceOfAccount, (balance, account) => {
                 if (snap.prevBalances[account] !== balance) {
                     snap.prevBalances[account] = balance;
@@ -158,12 +159,24 @@ module.exports = (app) => {
                     app.api.fireEvent(`balance-${account}`, balance);
                 }
             });
+            for (let i = 0; i < snap.currentState.allBets.length; i++) {
+                const bet = snap.currentState.allBets[i];
+                if (!snap.prevBetHash[bet.hash]) {
+                    app.api.fireEvent(`bets-${bet.account}`, bet);
+                    snap.prevBetHash[bet.hash] = true;
+                }
+            }
+
         },
         getAccountBalance: (account) => {
             return snap.prevBalances[account] || 0;
         },
+        getBets: (account) => {
+            return _.filter(snap.currentState.allBets, bet => bet.account === account);
+        },
         currentState: {},
         prevBalances: {},
+        prevBetHash: {},
     };
 
 

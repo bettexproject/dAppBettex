@@ -88,7 +88,7 @@
       StickyBet, tab, tabs
     },
     computed: {
-      ...mapGetters(['getMyBets', 'getMyBetsExtended', 'isLoggedIn']),
+      ...mapGetters(['getMyBetsExtended', 'isLoggedIn']),
       open() {
         return _.filter(this.getMyBetsExtended, bet => bet.isOpen);
       },

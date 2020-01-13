@@ -14,9 +14,9 @@
             <div class="event-item-names-value">{{ event.teams[1].name }}</div>
           </div>
         </div>
-<!--        <div class="event-item-morebutton" @click.prevent="toSingleEvent(event)">-->
-<!--          more-->
-<!--        </div>-->
+       <div class="event-item-morebutton" @click.prevent="toSingleEvent(event)">
+         more
+       </div>
         <div class="event-item-badges">
           <div class="event-item-badge-live" v-if="event.inPlay">
             <div class='pulsar'>
