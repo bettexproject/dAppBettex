@@ -44,6 +44,10 @@ module.exports = (app) => {
                     app.models.sportr.getCategoryTree()
                         .then(tree => socket.emit('categories', tree));
                 }
+                if (what === 'events') {
+                    app.models.sportr.getEvents(params)
+                        .then(tree => socket.emit('events', tree));
+                }
             });
         },
 
@@ -54,5 +58,4 @@ module.exports = (app) => {
 
     app.api = api;
     api.init();
-
 };

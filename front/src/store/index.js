@@ -29,7 +29,9 @@ const store = new Vuex.Store({
   },
   actions: {
     addSocketListener({ commit }, { event, listener }) {
+      console.log('listener', event);
       socket.on(event, listener);
+      socket.emit('subscribe', event);
       commit('ADD_SUBSCRIPTION', { event, listener });
     },
     emitSocketLoad(d, { event, params }) {

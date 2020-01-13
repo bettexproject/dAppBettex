@@ -149,10 +149,12 @@ module.exports = (app) => {
         update: async () => {
             snap.currentState = await snap.lastConfirmedState();
             console.log(snap.currentState);
+            console.log(snap.prevBalances);            
             console.log(snap.currentState.eventStacks);
             _.forEach(snap.currentState.balanceOfAccount, (balance, account) => {
                 if (snap.prevBalances[account] !== balance) {
                     snap.prevBalances[account] = balance;
+                    console.log('fire');
                     app.api.fireEvent(`balance-${account}`, balance);
                 }
             });

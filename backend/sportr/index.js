@@ -31,7 +31,7 @@ const importForDate = async (date, app) => {
                                 external_id,
                                 timestamp: match._dt.uts,
                                 status: match.status._id,
-                                updated_at: Date.now(),
+                                updated_at: match.updated_uts,
                                 ptime: match.ptime,
                                 ended: match.ended_uts,
                                 teams: teamInfo,
@@ -46,12 +46,12 @@ const importForDate = async (date, app) => {
     for (let i = 0; i < keys.length; i++) {
         await app.models.sportr.createOrUpdate(data[keys[i]]);
     }
-    console.log(data);
 };
+
 
 const importAll = async (app) => {
     const data = {};
-    for (let i = -7; i <= 14; i++) {
+    for (let i = -7; i <= 7; i++) {
         const scanDate = moment().add(i, 'd').format('YYYY-MM-DD');
         console.log(scanDate);
         await importForDate(scanDate, app);

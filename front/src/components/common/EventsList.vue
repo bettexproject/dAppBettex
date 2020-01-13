@@ -8,30 +8,15 @@
             <span v-for="country in sport.countries" :key="country.country">
                 <div v-for="league in country.leagues"
                      :key="league.league"
-                     :class="getCategoryAdapter(sport.sport) === 'dex' ? 'event-league-group-dex' :'event-league-group'">
+                     :class="'event-league-group'">
                     <div class="event-league-title">
                         <a class="c-green" :href="'/' + sport.sport + '/' + country.country">{{ country.country }}</a>.
                       {{ league.league }}
-                  <div class="dex-button-cta" @click.prevent="addBetting(sport.sport, country.country, league.league)" v-if="getCategoryAdapter(sport.sport) === 'dex'">
-                      Add bet
-                  </div>
                     </div>
 
                   <!--<div >-->
 
-                  <div class="dex-list-header" v-if="getCategoryAdapter(sport.sport) === 'dex'">
-                            <div class="dex-list-header-score event-hdr">Rate</div>
-                            <div class="event-hdr dex-event-hdr">Time of prediction rates</div>
-                            <div class="event-hdr dex-event-matched">Matched</div>
-                            <div class="dex-hdrs">
-                                <div class="dex-hdr">Higher</div>
-                                <div class="dex-hdr">Lower/eq</div>
-                            </div>
-                        </div>
-                        <EventDex v-for="event in league.events" :key="event.external_id" :event="event"
-                                  v-if="getCategoryAdapter(sport.sport) === 'dex'"></EventDex>
-
-                    <div v-if="getCategoryAdapter(sport.sport) === 'sportr'">
+                    <div>
                         <div class="event-list-header">
                             <div class="event-list-header-score event-hdr">Rate</div>
                             <div class="event-list-header-event event-hdr">Event</div>
@@ -103,7 +88,8 @@
       },
     },
     methods: {
-      ...mapMutations(['setEventFilter', 'setMaxPage']), ...mapActions(['fetchBets']),
+      ...mapMutations(['setMaxPage']),
+      ...mapActions(['loadEventsForFilter']),
       getCategoryAdapter: (categoryName) => getCategoryAdapter(categoryName),
       addBetting(category1, category2, category3) {
         this.showModal = true;
@@ -118,16 +104,16 @@
     watch: {
       $route: {
         handler() {
-          this.setEventFilter(this.$route.params);
+          this.loadEventsForFilter(this.$route.params);
         },
         immediate: true,
       },
       getEventTreePaginated() {
-        const ids = [];
+        // const ids = [];
 
-        _.forEach(this.getEventTreePaginated.tree, s => _.forEach(s.countries, c => _.forEach(c.leagues, l => _.forEach(l.events, e => ids.push(e.external_id)))));
+        // _.forEach(this.getEventTreePaginated.tree, s => _.forEach(s.countries, c => _.forEach(c.leagues, l => _.forEach(l.events, e => ids.push(e.external_id)))));
 
-        ids.length && this.fetchBets(ids);
+        // ids.length && this.fetchBets(ids);
       },
     },
   };

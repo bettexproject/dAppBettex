@@ -47,27 +47,21 @@
 
 <script>
   import _ from 'lodash';
-  // import {eventDateFilters} from "../../store/events";
+  import {eventDateFilters} from "../../store/events";
   import {mapGetters, mapMutations} from "vuex";
 
   export default {
-    props: {
-      adapter: {
-        type: String,
-        required: true,
-      },
-    },
     computed: {
       ...mapGetters(['getEventDateFilter']),
       eventDateFiltersList() {
-        // return _.keys(eventDateFilters[this.adapter]);
+        return _.keys(eventDateFilters);
       },
       currentFilter: {
         get() {
-          return this.getEventDateFilter[this.adapter];
+          return this.getEventDateFilter;
         },
         set(value) {
-          this.setDateFilter({ adapter: this.adapter, value });
+          this.setDateFilter(value);
         },
       }
     },

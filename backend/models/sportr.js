@@ -11,6 +11,7 @@ module.exports = (app) => {
         league: String,
 
         timestamp: Number,
+        updated_at: Number,
 
         status: Number,
 
@@ -59,7 +60,7 @@ module.exports = (app) => {
                 app.api.fireEvent(`onChange event ${params.external_id}`, updateEvent);
             }
         },
-        getCategoryTree: async() => {
+        getCategoryTree: async () => {
             const tree = {};
             const allData = await sportrModel.find();
             _.forEach(allData, item => {
@@ -67,11 +68,18 @@ module.exports = (app) => {
                 const sport = item.sport;
                 const league = item.league;
 
-                tree[sport] = tree[sport] || { sport, countries: {}};
-                tree[sport].countries[country] = tree[sport].countries[country] || { country, leagues: {}};
+                tree[sport] = tree[sport] || { sport, countries: {} };
+                tree[sport].countries[country] = tree[sport].countries[country] || { country, leagues: {} };
                 tree[sport].countries[country].leagues[league] = tree[sport].countries[country].leagues[league] || { league };
             });
             return tree;
+        },
+        getEvents: async ({ sport, country, league }) => {
+            const filter = {};
+            sport && (filter.sport = sport);
+            country && (filter.country = country);
+            league && (filter.league = league);
+            return await sportrModel.find(filter);
         },
     };
 };

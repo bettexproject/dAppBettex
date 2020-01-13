@@ -18,7 +18,7 @@
                 <input class='bet-popup-input' type="text" id="odds" style="width: 50px;" v-model="odds">
             </div>
             <div class="bet-popup-form-group" :class="isAmountValid ? 'valid' : 'invalid'">
-                <label for="amount" class="bet-popup-label">Amount <span class="asset-name">{{asset}}</span></label>
+                <label for="amount" class="bet-popup-label">Amount <span class="asset-name">USD</span></label>
                 <input class='bet-popup-input' type="text" id="amount" style="width: 80px;" v-model="amount">
             </div>
         </div>
@@ -28,7 +28,7 @@
                 bet
             </button>
             <span class="bet-popup-profit">Profit {{ profit }} <span
-                    class="asset-name">{{asset}}</span></span>
+                    class="asset-name">USD</span></span>
         </div>
         <div class="bet-popup-close close-cross" @click.prevent="toggleHide"></div>
     </div>
@@ -59,9 +59,6 @@
     computed: {
       ...mapGetters(['getHasUnapprovedBets']),
       ROUTE() { return ROUTE },
-      asset() {
-        return getCategoryAsset(this.event.sport);
-      },
       profit() {
         const p = (this.odds * this.amount).toFixed(2);
         return isNaN(p) ? '-' : p;

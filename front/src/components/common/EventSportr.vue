@@ -38,7 +38,7 @@
         </div>
         <MatchedShariks :matched="matchedCount" :unmatched="unmatchedCount"></MatchedShariks>
         <div class="event-item-matched">
-          {{ (getTotalMatchedByEvents[event.external_id] || '—') | round2 }}
+          <!-- {{ (getTotalMatchedByEvents[event.external_id] || '—') | round2 }} -->
         </div>
       </div>
       <BetGroup :event="event" v-model="betPopupOptions" :class="event.isFinished ? 'locked':''"></BetGroup>
@@ -73,10 +73,10 @@
     computed: {
       ...mapGetters(['getTotalMatchedByEvents', 'getBetsByEvents']),
       matchedCount() {
-        return this.getBetsByEvents.matchedByEvents[this.event.external_id] && _.size(this.getBetsByEvents.matchedByEvents[this.event.external_id]);
+        // return this.getBetsByEvents.matchedByEvents[this.event.external_id] && _.size(this.getBetsByEvents.matchedByEvents[this.event.external_id]);
       },
       unmatchedCount() {
-        return this.getBetsByEvents.unmatchedByEvents[this.event.external_id] && _.size(this.getBetsByEvents.unmatchedByEvents[this.event.external_id]);
+        // return this.getBetsByEvents.unmatchedByEvents[this.event.external_id] && _.size(this.getBetsByEvents.unmatchedByEvents[this.event.external_id]);
       },
     },
     data() {
