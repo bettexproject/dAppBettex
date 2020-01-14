@@ -22,9 +22,14 @@ module.exports = {
         'USA',
         'ATP',
         'WTA',
-      ],    
+    ],
 
-    // escrowAddress: '0x3B07cfAEAd145bBDf20156A4e83b8CBE29F5855B',
+    subevents: {
+        1: 't1',
+        2: 't2',
+        3: 'draw',
+    },
+
     escrowAddress: '0x78044fB5ADAA596555288B3F0F939b54C19AeFF2',
     proofEvents: {
         '0x92044645a95d9bb19c5fc216e5be180a47a434f0aeb5263c9a36c38f9ad65325': 'bet',

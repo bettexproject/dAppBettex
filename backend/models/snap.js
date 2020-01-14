@@ -4,6 +4,14 @@ const _ = require('lodash');
 
 const ODDS_PRECISION = 1000;
 
+const aggregateStacks = (stacks) => {
+    console.log(stacks);
+    return {
+        stackFor: [],
+        stackAgainst: [],
+    }
+};
+
 module.exports = (app) => {
     const snapSchema = new app.mongoose.Schema({
         blockNumber: Number,
@@ -150,33 +158,43 @@ module.exports = (app) => {
             return await snap.replay(fromBlock);
         },
         update: async () => {
-            console.log('update');
+            const prevState = { balanceOfAccount: {}, allBets: [], ..._.cloneDeep(snap.currentState) };
             snap.currentState = await snap.lastConfirmedState();
-            _.forEach(snap.currentState.balanceOfAccount, (balance, account) => {
-                if (snap.prevBalances[account] !== balance) {
-                    snap.prevBalances[account] = balance;
-                    console.log('fire');
-                    app.api.fireEvent(`balance-${account}`, balance);
+
+            const accounts = {};
+            _.forEach(_.keys(snap.currentState.balanceOfAccount), (account) => accounts[account] = true);
+            _.forEach(_.keys(prevState.balanceOfAccount), (account) => accounts[account] = true);
+
+            _.forEach(_.keys(accounts), (account) => {
+                if (prevState.balanceOfAccount[account] !== snap.currentState.balanceOfAccount[account]) {
+                    app.api.fireEvent(`balance-${account}`, snap.currentState.balanceOfAccount[account]);
                 }
             });
-            for (let i = 0; i < snap.currentState.allBets.length; i++) {
-                const bet = snap.currentState.allBets[i];
-                if (!snap.prevBetHash[bet.hash]) {
-                    app.api.fireEvent(`bets-${bet.account}`, bet);
-                    snap.prevBetHash[bet.hash] = true;
+
+            for (let i = 0; i < Math.max(snap.currentState.allBets.length, prevState.allBets.length); i++) {
+                const currentBet = snap.currentState.allBets[i];
+                if (JSON.stringify(currentBet) !== JSON.stringify(prevState.allBets[i])) {
+                    if (currentBet) {
+                        app.api.fireEvent(`bets-${currentBet.account}`, currentBet);
+                    } else {
+                        app.api.fireEvent(`bets-${prevState.allBets[i].account}`, { ...prevState.allBets[i], dismiss: true });
+                    }
                 }
             }
-
         },
         getAccountBalance: (account) => {
-            return snap.prevBalances[account] || 0;
+            return snap.currentState.balanceOfAccount[account] || 0;
         },
-        getBets: (account) => {
+        getAccountBets: (account) => {
             return _.filter(snap.currentState.allBets, bet => bet.account === account);
         },
+
+        getEventStacks: (eventid) => {
+            return _.mapValues(_.keys(config.subevents),
+                subevent => aggregateStacks(snap.currentState.eventStacks[`${eventid}-${subevent}`]));
+        },
+
         currentState: {},
-        prevBalances: {},
-        prevBetHash: {},
     };
 
     app.models.snap = snap;

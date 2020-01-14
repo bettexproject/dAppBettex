@@ -1,9 +1,5 @@
 <template>
-    <div v-if="getHasUnapprovedBets">you have
-        <router-link :to="{ name: ROUTE.account, params: {sub: 'bets'}}">unapproved bets</router-link>
-        , betting disabled
-    </div>
-    <div v-else :class="stateClass" class="bet-popup">
+    <div :class="stateClass" class="bet-popup">
         <div class="bet-popup-info">
             <div class="bet-popup-title">
                 {{title}}
@@ -57,7 +53,6 @@
       },
     },
     computed: {
-      ...mapGetters(['getHasUnapprovedBets']),
       ROUTE() { return ROUTE },
       profit() {
         const p = (this.odds * this.amount).toFixed(2);

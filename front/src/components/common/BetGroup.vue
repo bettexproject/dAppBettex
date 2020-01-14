@@ -119,6 +119,7 @@
         };
       },
       subevents() {
+        return ['t1', 'draw', 't2'];
         // return this.event && sportHasDraw(this.event.sport)
         //     ? ["t1", 'draw', "t2"]
         //     : ["t1", "t2"];

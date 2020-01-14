@@ -9,7 +9,7 @@ const app = {};
 models(app).then(() => {
     scanner(app);
     // miner(app);
-    sportr(app);
+    // sportr(app);
     api(app);
 });
 

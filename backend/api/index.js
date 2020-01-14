@@ -46,10 +46,10 @@ module.exports = (app) => {
                 }
                 if (what === 'events') {
                     app.models.sportr.getEvents(params)
-                        .then(events => socket.emit('events', events));
+                        .then(events => socket.emit('events', app.models.sportr.extendByStacks(events)));
                 }
                 if (what === 'bets') {
-                    const bets = app.models.snap.getBets(params);
+                    const bets = app.models.snap.getAccountBets(params);
                     socket.emit(`bets-${params}`, bets);
                 }
             });

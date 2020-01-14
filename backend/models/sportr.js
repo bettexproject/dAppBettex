@@ -52,12 +52,30 @@ module.exports = (app) => {
             record.teams = JSON.stringify(params.teams);
 
             await record.save();
+            app.models.sportr.notifyChange(record);
+        },
+        extendByStacks: (records) => {
+            const inputArray = Array.isArray(records) ? records : [records];
+            const outputArray = _.map(inputArray, record => {
+                return {
+                    ...record.toObject ? record.toObject() : record,
+                    stacks: app.models.snap.getEventStacks(record.external_id),
+                };
+            });
+
+            return Array.isArray(records) ? outputArray : outputArray[0];
+        },
+
+        notifyChange: (record) => {
             if (app.api.fireEvent) {
-                const updateEvent = { update: 'sportr', data: record };
-                app.api.fireEvent(`onChange sport ${params.sport}`, updateEvent);
-                app.api.fireEvent(`onChange country ${params.sport}-${params.country}`, updateEvent);
-                app.api.fireEvent(`onChange league ${params.sport}-${params.country}-${params.league}`, updateEvent);
-                app.api.fireEvent(`onChange event ${params.external_id}`, updateEvent);
+                const updateEvent = {
+                    update: 'sportr',
+                    data: app.models.sportr.extendByStacks(record),
+                };
+                app.api.fireEvent(`onChange sport ${record.sport}`, updateEvent);
+                app.api.fireEvent(`onChange country ${record.sport}-${record.country}`, updateEvent);
+                app.api.fireEvent(`onChange league ${record.sport}-${record.country}-${record.league}`, updateEvent);
+                app.api.fireEvent(`onChange event ${record.external_id}`, updateEvent);
             }
         },
         getCategoryTree: async () => {

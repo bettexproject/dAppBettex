@@ -4,6 +4,7 @@
       <div class="event-item-eventdata-group">
         <div class="event-item-scores-group">
           <div class="event-item-scores">
+            {{ event.external_id }}
             <div class="event-items-score-value">{{ event.teams[0].score }}
             </div>
             <div class="event-items-score-value">{{ event.teams[1].score }}
