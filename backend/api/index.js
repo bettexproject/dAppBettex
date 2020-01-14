@@ -33,7 +33,6 @@ module.exports = (app) => {
             });
 
             socket.on('load', (what, params) => {
-                console.log(what);
                 if (what === 'sportr') {
                     app.models.sportr.load(params);
                 }

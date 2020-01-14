@@ -24,14 +24,13 @@ const aggregateStack = (_bets, allBets) => {
         last.total += bet.amount;
         last.matched += bet.matched;
     }
-    console.log(stack);
     return stack;
 }
 
 const aggregateStacks = (stacks, allBets) => {
     return {
         stackFor: aggregateStack(stacks ? stacks.betsFor : [], allBets),
-        stackAgainst: aggregateStack(stacks ? stacks.betsFor : [], allBets),
+        stackAgainst: aggregateStack(stacks ? stacks.betsAgainst : [], allBets),
     }
 };
 

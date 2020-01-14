@@ -79,7 +79,6 @@ module.exports = (app) => {
             }
         },
         notifyChangeById: async (eventid) => {
-            console.log('notifyChangeById', eventid);
             const record = await sportrModel.findOne({ external_id: eventid });
             if (record) {
                 app.models.sportr.notifyChange(record);
