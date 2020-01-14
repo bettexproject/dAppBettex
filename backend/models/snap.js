@@ -4,11 +4,34 @@ const _ = require('lodash');
 
 const ODDS_PRECISION = 1000;
 
-const aggregateStacks = (stacks) => {
-    console.log(stacks);
+const aggregateStack = (_bets, allBets) => {
+    const bets = _bets || [];
+    const stack = [];
+    let lastOdds = null;
+    for (let i = 0; i < bets.length; i++) {
+        const bet = allBets[bets[i]];
+        if ((lastOdds === null) || (lastOdds !== bet.odds)) {
+            stack.push({
+                odds: bet.odds,
+                items: 0,
+                total: 0,
+                matched: 0,
+            });
+            lastOdds = bet.odds;
+        }
+        const last = stack[stack.length - 1];
+        last.items++;
+        last.total += bet.amount;
+        last.matched += bet.matched;
+    }
+    console.log(stack);
+    return stack;
+}
+
+const aggregateStacks = (stacks, allBets) => {
     return {
-        stackFor: [],
-        stackAgainst: [],
+        stackFor: aggregateStack(stacks ? stacks.betsFor : [], allBets),
+        stackAgainst: aggregateStack(stacks ? stacks.betsFor : [], allBets),
     }
 };
 
@@ -83,10 +106,10 @@ module.exports = (app) => {
                     const eventKey = `${input.eventid}-${input.subevent}`;
                     const bet = {
                         account: tx.account,
-                        eventid: input.eventid,
-                        subevent: input.eventid,
-                        amount: input.amount,
-                        odds: input.odds,
+                        eventid: parseInt(input.eventid),
+                        subevent: parseInt(input.eventid),
+                        amount: parseInt(input.amount),
+                        odds: parseInt(input.odds),
                         side: input.side,
                         matched: 0,
                         matched_peer: 0,
@@ -158,26 +181,29 @@ module.exports = (app) => {
             return await snap.replay(fromBlock);
         },
         update: async () => {
-            const prevState = { balanceOfAccount: {}, allBets: [], ..._.cloneDeep(snap.currentState) };
+            const prevBalances = _.clone(snap.currentState.balanceOfAccount || {});
+            const prevBets = _.clone(snap.currentState.allBets || []);
             snap.currentState = await snap.lastConfirmedState();
 
             const accounts = {};
             _.forEach(_.keys(snap.currentState.balanceOfAccount), (account) => accounts[account] = true);
-            _.forEach(_.keys(prevState.balanceOfAccount), (account) => accounts[account] = true);
+            _.forEach(_.keys(prevBalances), (account) => accounts[account] = true);
 
             _.forEach(_.keys(accounts), (account) => {
-                if (prevState.balanceOfAccount[account] !== snap.currentState.balanceOfAccount[account]) {
+                if (prevBalances[account] !== snap.currentState.balanceOfAccount[account]) {
                     app.api.fireEvent(`balance-${account}`, snap.currentState.balanceOfAccount[account]);
                 }
             });
 
-            for (let i = 0; i < Math.max(snap.currentState.allBets.length, prevState.allBets.length); i++) {
+            for (let i = 0; i < Math.max(snap.currentState.allBets.length, prevBets.length); i++) {
                 const currentBet = snap.currentState.allBets[i];
-                if (JSON.stringify(currentBet) !== JSON.stringify(prevState.allBets[i])) {
+                if (JSON.stringify(currentBet) !== JSON.stringify(prevBets[i])) {
                     if (currentBet) {
                         app.api.fireEvent(`bets-${currentBet.account}`, currentBet);
+                        await app.models.sportr.notifyChangeById(currentBet.eventid);
                     } else {
-                        app.api.fireEvent(`bets-${prevState.allBets[i].account}`, { ...prevState.allBets[i], dismiss: true });
+                        app.api.fireEvent(`bets-${prevBets[i].account}`, { ...prevBets[i], dismiss: true });
+                        await app.models.sportr.notifyChangeById(prevBets[i].eventid);
                     }
                 }
             }
@@ -190,8 +216,13 @@ module.exports = (app) => {
         },
 
         getEventStacks: (eventid) => {
-            return _.mapValues(_.keys(config.subevents),
-                subevent => aggregateStacks(snap.currentState.eventStacks[`${eventid}-${subevent}`]));
+            const ret = {};
+            _.forEach(_.keys(config.subevents),
+                subevent =>
+                    ret[subevent] = aggregateStacks(snap.currentState.eventStacks[`${eventid}-${subevent}`],
+                        snap.currentState.allBets));
+
+            return ret;
         },
 
         currentState: {},

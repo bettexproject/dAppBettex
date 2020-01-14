@@ -78,6 +78,13 @@ module.exports = (app) => {
                 app.api.fireEvent(`onChange event ${record.external_id}`, updateEvent);
             }
         },
+        notifyChangeById: async (eventid) => {
+            console.log('notifyChangeById', eventid);
+            const record = await sportrModel.findOne({ external_id: eventid });
+            if (record) {
+                app.models.sportr.notifyChange(record);
+            }
+        },
         getCategoryTree: async () => {
             const tree = {};
             const allData = await sportrModel.find();
