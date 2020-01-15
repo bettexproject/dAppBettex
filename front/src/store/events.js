@@ -1,6 +1,9 @@
 import _ from 'lodash';
 import moment from 'moment';
 import Vue from 'vue';
+import config from '../config/config';
+
+export const subeventName = (subevent) => config.subevents[subevent];
 
 export const eventFromFilter = (filter) => {
   if (filter.sport && filter.country && filter.league) {

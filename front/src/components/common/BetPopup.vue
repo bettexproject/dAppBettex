@@ -33,7 +33,7 @@
 <script>
   import {mapActions, mapGetters} from "vuex";
   import {ROUTE} from '../../router';
-  // import {getBetTypes, getCategoryAsset} from "../../store/events";
+  import {subeventName} from "../../store/events";
   import config from '../../config/config';
 
   export default {
@@ -68,7 +68,7 @@
         return this.lock ? 'locked' : 'active';
       },
       betType() {
-        // return (this.event && this.value && this.value.subevent && getBetTypes(this.event)[this.value.subevent].name);
+        return (this.value && this.value.subevent && subeventName(this.value.subevent));
       },
       isOddsValid() {
         return (this.odds.toString() === parseFloat(this.odds).toString())
@@ -95,7 +95,6 @@
           event: this.event.external_id,
           amount: this.amount,
           odds: this.odds,
-          asset: this.asset,
         })
           .then(() => {
             this.$emit('input', {...this.value, showPopup: false});

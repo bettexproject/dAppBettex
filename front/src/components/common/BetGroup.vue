@@ -17,7 +17,9 @@
           @click.prevent="openBets(exactSubevent, side)"
           :class="`bet-side-${side} bet-side shine-slide`"
         >{{ topOdds(exactSubevent, side).odds | round2 }}</div>
-        <div class="bet-side bet-side-unmatched">{{ topOdds(exactSubevent, side).unmatched | round2 }}</div>
+        <div
+          class="bet-side bet-side-unmatched"
+        >{{ topOdds(exactSubevent, side).unmatched | round2 }}</div>
       </div>
     </div>
     <div class="bet-group bet-group-three-line" v-if="view === '3x2-lane'">
@@ -66,18 +68,35 @@ export default {
       return [1, 3, 2];
     },
     sides() {
-      return ['for', 'against'];
+      return ["for", "against"];
     },
     topOdds() {
       return (subevent, side) => {
         const subeventStacks = this.event.stacks[subevent] || {};
-        const sideStack = subeventStacks[side === 'for' ? "stackFor" : "stackAgainst"];
+        const sideStack =
+          subeventStacks[side !== "for" ? "stackFor" : "stackAgainst"];
         const item = sideStack && sideStack.length && sideStack[0];
         return {
-          unmatched: (item && (item.total - item.matched)) || '-',
-          odds: (item && item.odds && item.odds / 1000) || '-',
+          unmatched:
+            (item &&
+              (item.total - item.matched) / config.decimalMultiplicator) ||
+            "-",
+          odds: (item && item.odds && item.odds / config.ODDS_PRECISION) || "-"
         };
       };
+    }
+  },
+  methods: {
+    openBets(subevent, side) {
+      const odds = this.topOdds(subevent, side).odds;
+      const newVal = {
+        ...this.value,
+        showPopup: true,
+        startOdds: odds === "-" ? 2 : odds,
+        side,
+        subevent,
+      };
+      this.$emit("input", newVal);
     }
   }
 };

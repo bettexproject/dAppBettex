@@ -2,7 +2,7 @@ const config = require('../config');
 const { decodeInput } = require('../utils');
 const _ = require('lodash');
 
-const ODDS_PRECISION = 1000;
+const ODDS_PRECISION = 100;
 
 const aggregateStack = (_bets, allBets) => {
     const bets = _bets || [];
@@ -10,6 +10,9 @@ const aggregateStack = (_bets, allBets) => {
     let lastOdds = null;
     for (let i = 0; i < bets.length; i++) {
         const bet = allBets[bets[i]];
+        if (bet.amount - bet.matched - bet.cancelled < 1) {
+            continue;
+        }
         if ((lastOdds === null) || (lastOdds !== bet.odds)) {
             stack.push({
                 odds: bet.odds,

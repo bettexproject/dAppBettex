@@ -24,13 +24,15 @@ module.exports = {
         'WTA',
     ],
 
+    ODDS_PRECISION: 100,
+
     subevents: {
         1: 't1',
         2: 't2',
         3: 'draw',
     },
 
-    escrowAddress: '0x78044fB5ADAA596555288B3F0F939b54C19AeFF2',
+    escrowAddress: '0xA8C28EbC8C3a884f57fC1418717B23c32257446B',
     proofEvents: {
         '0x92044645a95d9bb19c5fc216e5be180a47a434f0aeb5263c9a36c38f9ad65325': 'bet',
         '0xeaa18152488ce5959073c9c79c88ca90b3d96c00de1f118cfaad664c3dab06b9': 'deposit',

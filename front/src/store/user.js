@@ -1,4 +1,5 @@
 import api from './api';
+import config from '../config/config';
 
 export default {
     state: {
@@ -59,6 +60,6 @@ export default {
         getAuth: state => state.auth,
         getUserAddress: (state, getters) => getters.getAuth && getters.getAuth.address,
         isLoggedIn: (state, getters) => !!getters.getAuth,
-        getBalance: (state) => state.balance,
+        getBalance: (state) => state.balance / config.decimalMultiplicator,
     },
 }
