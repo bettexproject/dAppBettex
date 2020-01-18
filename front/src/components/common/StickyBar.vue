@@ -96,11 +96,5 @@
         return _.filter(this.getMyBetsExtended, bet => bet.isPlaced).slice(0, config.maxPlacedBets);
       },
     },
-    methods: {
-      ...mapActions(['fetchMyBets', 'fetchEventsById']),
-    },
-    mounted() {
-      this.fetchMyBets({joinEvents: true});
-    },
   };
 </script>

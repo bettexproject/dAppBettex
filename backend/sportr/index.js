@@ -6,7 +6,8 @@ const moment = require('moment');
 const importForDate = async (date, app) => {
     const data = {};
     for (let sportIdx = 0; sportIdx < config.sports.length; sportIdx++) {
-        const apiRequest = await axios.get(`https://ls.fn.sportradar.com/winline/en/Asia:Yekaterinburg/gismo/sport_matches/${config.sports[sportIdx]}/${date}/0`);
+        const apiRequest = await axios.get(`https://ls.fn.sportradar.com/winline/en/Asia:Yekaterinburg/gismo/sport_matches/${config.sports[sportIdx]}/${date}/0`)
+            .catch((e) => { console.log('error in sports parse') });
         if (apiRequest && apiRequest.data && apiRequest.data.doc && apiRequest.data.doc[0]) {
             const sportName = apiRequest.data.doc[0].data.sport.name;
             _.forEach(apiRequest.data.doc[0].data.sport.realcategories, country => {

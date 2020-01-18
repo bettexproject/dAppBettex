@@ -22,14 +22,18 @@ module.exports = (app) => {
             });
         },
 
+        subscribe: (socket, event) => {
+            api.events[event] = api.events[event] || [];
+            api.events[event].push(socket);
+        },
+
         onConnection: (socket) => {
             socket.on('disconnect', () => {
                 api.unsubscribeFromAll(socket);
             });
 
             socket.on('subscribe', (event) => {
-                api.events[event] = api.events[event] || [];
-                api.events[event].push(socket);
+                api.subscribe(socket, event);
             });
 
             socket.on('load', (what, params) => {
@@ -50,6 +54,12 @@ module.exports = (app) => {
                 if (what === 'bets') {
                     const bets = app.models.snap.getAccountBets(params);
                     socket.emit(`bets-${params}`, bets);
+                    app.models.sportr.getEventsByBets(bets).then(events => {
+                        socket.emit('events', app.models.sportr.extendByStacks(events));
+                        _.forEach(events, event => {
+                            api.subscribe(socket, `onChange event ${event.external_id}`)
+                        });
+                    });
                 }
             });
         },

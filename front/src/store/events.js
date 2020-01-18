@@ -127,7 +127,7 @@ const convertEvents = (rawEvents) => {
 
 export default {
   state: {
-    events: [],
+    events: {},
     eventFilter: {},
     maxPage: 1,
     perPage: 10,
@@ -135,9 +135,14 @@ export default {
     // eventDateFilter: _.findKey(eventDateFilters, i => i.default),
   },
   mutations: {
-    setEventFilter: (state, val) => { state.eventFilter = val; console.log(val); },
+    setEventFilter: (state, val) => state.eventFilter = val,
     setDateFilter: (state, val) => state.eventDateFilter = val,
-    onEvents: (state, val) => state.events = convertEvents(val),
+    onEvents: (state, val) => {
+      const newEvents = convertEvents(val);
+      _.forEach(newEvents, event => {
+        Vue.set(state.events, event.external_id, event);
+      });
+    },
     onEventItem: (state, val) => Vue.set(state.events, val.data.external_id, convertEvents([val.data])[val.data.external_id]),
   },
   actions: {
@@ -171,7 +176,7 @@ export default {
         return (!filters.sport || filters.sport === event.sport)
           && (!filters.country || filters.country === event.country)
           && (!filters.league || filters.league === event.league)
-        && (eventDateFilter.filter(event))
+          && (eventDateFilter.filter(event))
       });
     },
     getMaxPage: state => state.maxPage,

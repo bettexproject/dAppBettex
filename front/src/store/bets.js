@@ -5,15 +5,18 @@ import api from './api';
 
 const extendBets = (bets, events) => {
     return(_.map(bets, bet => {
+        const event = events[bet.eventid];
+        const eventName = (event && event.teams) ? `${event.teams[0].name} - ${event.teams[1].name}` : '';
+        console.log(bet);
         return {
             ...bet,
             isOpen: (bet.amount - bet.matched) >= 1,
             isPlaced: (bet.amount - bet.matched) < 1,
             side: bet.side ? 'for' : 'against',
-            odds: bet.odds / 10,
+            odds: bet.odds,
             asset: 'USD',
-            eventName: 'TODO event name',
-            subevent: 'todo',
+            eventName,
+            subevent: config.subevents[bet.subevent],
             cancellable: bet.amount > bet.matched,
             spentNominal: bet.matched / config.decimalMultiplicator,
             amountNominal: bet.amount / config.decimalMultiplicator,

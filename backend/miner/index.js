@@ -15,7 +15,7 @@ const miner = {
             callData,
             nonce,
             3000000,
-            Math.round(0.000000010 * 10 ** 18), // TODO dynamic gas price
+            Math.round(config.minerGasPrice),
             config.privKey)
             .catch(console.log);
 

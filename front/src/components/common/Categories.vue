@@ -67,7 +67,7 @@
     watch: {
       $route: {
         handler() {
-          const newSport = this.$route.params.sport || config.topCategories[0].name;
+          const newSport = this.$route.params.sport || config.defaultSport;
           if (newSport !== this.activeSport) {
             this.activeSport = newSport;
             // this.loadDisplayedEvents();

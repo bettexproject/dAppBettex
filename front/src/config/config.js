@@ -1,1 +1,6 @@
-module.exports = require('./config-eth-dev');
+export default {
+    ...require('./config-eth-dev'),
+    ...require('./config-common'),
+};
+
+

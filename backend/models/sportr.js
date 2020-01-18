@@ -66,6 +66,16 @@ module.exports = (app) => {
             return Array.isArray(records) ? outputArray : outputArray[0];
         },
 
+        getEventsByBets: async (bets) => {
+            const events = {};
+            _.forEach(bets, bet => events[bet.eventid] = true);
+            const idsKeys = _.keys(events);
+            for (let i = 0; i < idsKeys.length; i++) {
+                events[idsKeys[i]] = await sportrModel.findOne({ external_id: idsKeys[i]});
+            }
+            return _.values(events);
+        },
+
         notifyChange: (record) => {
             if (app.api.fireEvent) {
                 const updateEvent = {

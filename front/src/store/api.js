@@ -10,11 +10,11 @@ const contract = new web3.eth.Contract(ABI, config.escrowAddress);
 
 const gasPrice = async () => {
     const gsapi = await axios.get('https://ethgasstation.info/json/ethgasAPI.json');
-    if (!gsapi || !gsapi.data || !gsapi.data.fast) {
+    if (!gsapi || !gsapi.data || !gsapi.data.average) {
         return undefined;
     }
 
-    return web3.utils.toHex(gsapi.data.fast * 10**8);
+    return web3.utils.toHex(gsapi.data.average * 10**8);
 };
 
 export default {

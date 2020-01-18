@@ -1,12 +1,4 @@
 module.exports = {
-  escrowAddress: '0xA8C28EbC8C3a884f57fC1418717B23c32257446B',
+  escrowAddress: '0xE0dEb1fE83B01a58D2f2899FA4e67907b4dAdEe1',
   decimalMultiplicator: Math.pow(10, 3),
-  ODDS_PRECISION: 100,
-  minCreateMarketBet: 5,
-
-  subevents: {
-    1: 't1',
-    2: 't2',
-    3: 'draw',
-  },
-}
+};

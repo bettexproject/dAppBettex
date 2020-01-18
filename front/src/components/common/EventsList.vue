@@ -75,7 +75,7 @@
         // return getCategoryAdapter(this.sportFromRouting);
       },
       sportFromRouting() {
-        return this.$route.params.sport || config.topCategories[0].name;
+        return this.$route.params.sport || config.defaultSport;
       },
       eventTree() {
         return this.getEventTreePaginated.tree;

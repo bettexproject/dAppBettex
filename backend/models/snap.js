@@ -109,7 +109,7 @@ module.exports = (app) => {
                     const bet = {
                         account: tx.account,
                         eventid: parseInt(input.eventid),
-                        subevent: parseInt(input.eventid),
+                        subevent: parseInt(input.subevent),
                         amount: parseInt(input.amount),
                         odds: parseInt(input.odds),
                         side: input.side,
@@ -163,7 +163,7 @@ module.exports = (app) => {
             for (let i = 0; i < additionalTxs.length; i++) {
                 const tx = additionalTxs[i];
                 if (prevBlock && (tx.blockNumber > prevBlock) && (tx.blockNumber > 0) && (tx.blockNumber < app.currentHeight - config.rescanDepth)) {
-                    // await snapModel.create({ blockNumber: prevBlock, state: JSON.stringify(savedState) });
+                    await snapModel.create({ blockNumber: prevBlock, state: JSON.stringify(savedState) });
                 }
                 prevBlock = tx.blockNumber;
                 snap.replayTx(savedState, tx);
@@ -223,11 +223,14 @@ module.exports = (app) => {
                 subevent =>
                     ret[subevent] = aggregateStacks(snap.currentState.eventStacks[`${eventid}-${subevent}`],
                         snap.currentState.allBets));
-
             return ret;
         },
 
-        currentState: {},
+        currentState: {
+            balanceOfAccount: {},
+            eventStacks: {},
+            allBets: [],
+        },
     };
 
     app.models.snap = snap;
