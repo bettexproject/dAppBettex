@@ -7,7 +7,6 @@ const extendBets = (bets, events) => {
     return(_.map(bets, bet => {
         const event = events[bet.eventid];
         const eventName = (event && event.teams) ? `${event.teams[0].name} - ${event.teams[1].name}` : '';
-        console.log(bet);
         return {
             ...bet,
             isOpen: (bet.amount - bet.matched) >= 1,

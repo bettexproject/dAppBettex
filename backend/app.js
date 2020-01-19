@@ -8,8 +8,8 @@ const app = {};
 
 models(app).then(() => {
     scanner(app);
-    miner(app);
-    // sportr(app);
+    // miner(app);
+    sportr(app);
     api(app);
 });
 
