@@ -10,6 +10,8 @@ contract ERC20 {
 contract BettexEth is usingProvable {
     ERC20 USDT = ERC20(0x25211B0C499f143E7B6f09eC38C7e60d78E37d15);
     
+    address public creator = msg.sender;
+    
     uint public lastBlock = block.number;
     uint public contractCreated = block.number;
     
@@ -64,11 +66,12 @@ contract BettexEth is usingProvable {
     
     /* bets structures */
     
-    uint constant public ODDS_PRECISION = 1000;
+    uint constant public ODDS_PRECISION = 100;
 
     struct BetItem {
         address owner;
         bool side;
+        bool paid;
         uint64 eventid;
         uint64 subevent;
 
@@ -79,12 +82,68 @@ contract BettexEth is usingProvable {
         uint64 cancelled;
     }
     
+    mapping (bytes32 => uint) public eventState;
+    /**
+     * event states
+     * 0 - unknown (default)
+     * 1 - won for
+     * 2 - won against
+     * 3 - refund
+    */
+    
+    function setEventResult(uint64 eventid, uint64 subevent, uint state) public {
+        require(msg.sender == creator);
+        bytes32 k = getEventHash(eventid, subevent);
+        require(eventState[k] == 0);
+        eventState[k] = state;
+    }
+    
+    event PayoutWinnings(address account, uint amount);
+    
+    function payout(address account, uint amount) internal {
+        USDT.transfer(account, amount);
+        emit PayoutWinnings(account, amount);
+    }
+    
+    event OutOfGasWhilePayout (uint);
+    event WinningsFinished();
+    
+    function processWinnings(uint minGas, uint[] calldata bets) external {
+        for (uint i = 0; i < bets.length; i++) {
+            if (gasleft() < minGas) {
+                emit OutOfGasWhilePayout(i);
+                return;
+            }
+            BetItem storage b = allBets[bets[i]];
+            bytes32 k = getEventHash(b.eventid, b.subevent);
+            uint betState = eventState[k];
+            
+            if (b.paid) {
+                continue;
+            }
+            if (betState == 0) {
+                continue;
+            }
+            if ((betState == 1) && (b.side)) {
+                payout(b.owner, b.matched + b.matched_peer);
+            }
+            if ((betState == 2) && (!b.side)) {
+                payout(b.owner, b.matched + b.matched_peer);
+            }
+            if (betState == 3) {
+                payout(b.owner, b.matched);
+            }
+            b.paid = true;
+        }
+        emit WinningsFinished();
+    }
+    
     mapping (uint => BetItem) public allBets;
     uint public allBetsSeq;
     
     function allBets_add(address owner, bool side, uint64 eventid, uint64 subevent, uint64 amount, uint64 odds) internal {
         ++allBetsSeq;
-        allBets[allBetsSeq] = BetItem(owner, side, eventid, subevent, amount, odds, 0, 0, 0);
+        allBets[allBetsSeq] = BetItem(owner, false, side, eventid, subevent, amount, odds, 0, 0, 0);
     }
     
     function BetsForEvent_consumeTop(SortedIteratorHelper storage oppositeSide, BetItem storage betThisSide) internal {
@@ -176,7 +235,7 @@ contract BettexEth is usingProvable {
         // pass 1 - check, pass2 - execute
         bool commit = false;
         do {
-            for (uint pos = commit ? startCommitWith : 0; pos < compressedActions.length; ) {
+            for (uint pos = 0; pos < compressedActions.length; ) {
                 uint blocknumber = uint(compressedActions[pos++]);
                 
                 if (commit) {
@@ -197,16 +256,18 @@ contract BettexEth is usingProvable {
 
                 for (uint i = 0; i < chainlen; i++) {
                     if (commit && (gasleft() < minGas)) {
-                        startCommitWith = pos;
-                        emit OutOfGasWhileReplay(blocknumber, pos);
+                        startCommitWith = i;
+                        lastBlock = blocknumber;
+                        emit OutOfGasWhileReplay(blocknumber, i);
                         return;
                     }
+                    
                     bytes32 action = compressedActions[pos++];
                     
                     if (action == bytes32("deposit")) {
                         address account = address(uint256(compressedActions[pos++]));
                         uint amount = uint(compressedActions[pos++]);
-                        if (commit) {
+                        if (commit && (i >= startCommitWith)) {
                             uint balance = userBalances[account] + amount;
                             userBalances[account] = balance;
                             emit DepositPlayed(account, amount, balance);
@@ -218,7 +279,7 @@ contract BettexEth is usingProvable {
                     if (action == bytes32("withdraw")) {
                         address account = address(uint256(compressedActions[pos++]));
                         uint amount = uint(compressedActions[pos++]);
-                        if (commit) {
+                        if (commit && (i >= startCommitWith)) {
                             if (userBalances[account] >= amount) {
                                 if (USDT.transfer(address(this), amount)) {
                                     uint balance = userBalances[account] - amount;
@@ -241,7 +302,7 @@ contract BettexEth is usingProvable {
                         uint64 odds = uint64(uint(compressedActions[pos++]));
                         bool side = uint(compressedActions[pos++]) != 0;
                         uint hint_add_odds_this = uint(compressedActions[pos++]);
-                        if (commit) {
+                        if (commit && (i >= startCommitWith)) {
                             if (tryDoBet(account, eventid, subevent, amount, odds, side, hint_add_odds_this)) {
                                 emit BetPlayed(account, eventid, subevent, amount, odds, side);
                             } else {
