@@ -18,9 +18,11 @@ export const eventFromFilter = (filter) => {
   return 'onChange event';
 };
 
+export const isRunning = (event) => ([6, 7, 31].indexOf(event.status) >= 0);
+
 export const eventDateFilters = {
   'in play': {
-    filter: event => event.adapter.isRunning(event),
+    filter: event => event.isRunning,
   },
   'next 24 hours': {
     filter: event => checkIntervalFromNow(event, '0', 'h', '24', 'h'),
@@ -35,6 +37,15 @@ export const eventDateFilters = {
   'previous 7 days': {
     filter: event => checkIntervalFromNow(event, '-7', 'd', '-24', 'h'),
   },
+};
+
+const extendEvents = (events) => {
+  return _.map(events, event => (
+    {
+      ...event,
+      isRunning: isRunning(event),
+    }
+  ));
 };
 
 const groupByCategory = (events, filter) => {
@@ -163,7 +174,7 @@ export default {
     },
   },
   getters: {
-    getEvents: (state) => state.events,
+    getEvents: (state) => extendEvents(state.events),
     getEventFilter: (state) => state.eventFilter,
     getEventDateFilter: state => state.eventDateFilter,
     getFilteredEvents: (state, getters) => {

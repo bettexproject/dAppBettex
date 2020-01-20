@@ -18,7 +18,7 @@
          more
        </div>
         <div class="event-item-badges">
-          <div class="event-item-badge-live" v-if="event.inPlay">
+          <div class="event-item-badge-live" v-if="event.isRunning">
             <div class='pulsar'>
               <div class="point">
               </div>
