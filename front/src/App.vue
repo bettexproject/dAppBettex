@@ -276,11 +276,9 @@
   }
 
   .notifications {
-    top: 30px;
-    right: 20px;
+    top: 50px !important;
     overflow: hidden;
     max-height: 100vh;
-
   }
 
   .notification-wrapper {
@@ -293,10 +291,6 @@
   &::-webkit-scrollbar {
      display: none;
    }
-  }
-
-  .notification-wrapper:first-child {
-    margin-top: 50px;
   }
 
   .notification-wrapper + .notification-wrapper .notification {
