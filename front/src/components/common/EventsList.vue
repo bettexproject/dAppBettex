@@ -18,7 +18,7 @@
 
                     <div>
                         <div class="event-list-header">
-                            <div class="event-list-header-score event-hdr">Rate</div>
+                            <div class="event-list-header-score event-hdr">Score</div>
                             <div class="event-list-header-event event-hdr">Event</div>
                             <div class="event-team-hdrs">
                                 <div class="event-team-hdr">1</div>

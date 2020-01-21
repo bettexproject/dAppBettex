@@ -72,11 +72,9 @@
     },
     computed: {
       matchedCount() {
-        console.log(this.event);
         return this.event.matched_count;
       },
       unmatchedCount() {
-        console.log(this.event);
         return this.event.total_count;
       },
     },
