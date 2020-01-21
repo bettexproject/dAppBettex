@@ -64,6 +64,20 @@ contract BettexEth is usingProvable {
         emit Bet (block.number, msg.sender, eventid, subevent, amount, odds, side);
     }
     
+    /* cancel */
+    event Cancel (uint blocknumber, address account, uint betid);
+    event CancelPlayed (uint betid);
+    event CancelPlayFailed (uint betid);
+    
+    function cancelHash (address account, uint betid) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked("cancel", account, betid));
+    }
+    
+    function cancel (uint betid) external {
+        addActionProof(cancelHash(msg.sender, betid));
+        emit Cancel (block.number, msg.sender, betid);
+    }
+    
     /* bets structures */
     
     uint constant public ODDS_PRECISION = 100;
@@ -311,7 +325,25 @@ contract BettexEth is usingProvable {
                         } else {
                             currentHash = keccak256(abi.encodePacked(currentHash, betHash(account, eventid, subevent, amount, odds, side)));
                         }
-                        
+                    }
+                    
+                    if (action == bytes32("cancel")) {
+                        address account = address(uint256(compressedActions[pos++]));
+                        uint betid = uint(compressedActions[pos++]);
+                        BetItem storage cancel_bet = allBets[betid];
+                        if (commit && (i >= startCommitWith)) {
+                            uint64 cancel_amount = cancel_bet.amount - cancel_bet.matched - cancel_bet.cancelled;
+                            if ((cancel_bet.owner == account) && (cancel_amount > 0)) {
+                                cancel_bet.cancelled += cancel_amount;
+                                userBalances[account] += cancel_amount;
+                                emit CancelPlayed(betid);
+                            } else {
+                                emit CancelPlayFailed(betid);
+                            }
+                        } else {
+                            currentHash = keccak256(abi.encodePacked(currentHash, cancelHash(account, betid)));
+                        }
+
                     }
                 }
                 if (commit) {
