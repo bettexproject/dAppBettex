@@ -10,7 +10,7 @@
                      :key="league.league"
                      :class="'event-league-group'">
                     <div class="event-league-title">
-                        <a class="c-green" :href="'/' + sport.sport + '/' + country.country">{{ country.country }}</a>.
+                        <a class="c-green" :href="'/events/' + sport.sport + '/' + country.country">{{ country.country }}</a>.
                       {{ league.league }}
                     </div>
 

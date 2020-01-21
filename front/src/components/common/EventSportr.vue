@@ -71,12 +71,13 @@
       },
     },
     computed: {
-      ...mapGetters(['getTotalMatchedByEvents', 'getBetsByEvents']),
       matchedCount() {
-        // return this.getBetsByEvents.matchedByEvents[this.event.external_id] && _.size(this.getBetsByEvents.matchedByEvents[this.event.external_id]);
+        console.log(this.event);
+        return this.event.matched_count;
       },
       unmatchedCount() {
-        // return this.getBetsByEvents.unmatchedByEvents[this.event.external_id] && _.size(this.getBetsByEvents.unmatchedByEvents[this.event.external_id]);
+        console.log(this.event);
+        return this.event.total_count;
       },
     },
     data() {

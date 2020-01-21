@@ -18,7 +18,8 @@ export const eventFromFilter = (filter) => {
   return 'onChange event';
 };
 
-export const isRunning = (event) => ([6, 7, 31].indexOf(event.status) >= 0);
+const isRunning = (event) => ([6, 7, 31].indexOf(event.status) >= 0);
+const isFinished = (event) => ([100, 110, 120, 125].indexOf(event.status) >= 0);
 
 export const eventDateFilters = {
   'in play': {
@@ -40,12 +41,26 @@ export const eventDateFilters = {
 };
 
 const extendEvents = (events) => {
-  return _.map(events, event => (
-    {
+  return _.map(events, event => {
+    let total_count = 0;
+    let matched_count = 0;
+    let matched_amount = 0;
+    _.forEach(event.stacks, subeventData =>
+      ['stackFor', 'stackAgainst'].forEach(k => {
+        total_count += subeventData[k].total_count;
+        matched_amount += subeventData[k].matched_amount;
+        matched_count += subeventData[k].matched_count;
+      }));
+
+    return {
       ...event,
       isRunning: isRunning(event),
-    }
-  ));
+      isFinished: isFinished(event),
+      total_count,
+      matched_amount,
+      matched_count,
+    };
+  });
 };
 
 const groupByCategory = (events, filter) => {

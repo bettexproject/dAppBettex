@@ -73,13 +73,16 @@ export default {
     topOdds() {
       return (subevent, side) => {
         const subeventStacks = this.event.stacks[subevent] || {};
-        const sideStack =
+        const sideStackExt =
           subeventStacks[side !== "for" ? "stackFor" : "stackAgainst"];
+
+        const sideStack = sideStackExt.stack;
+
         const item = sideStack && sideStack.length && sideStack[0];
         return {
           unmatched:
             (item &&
-              (item.total - item.matched) / config.decimalMultiplicator) ||
+              item.unmatched / config.decimalMultiplicator) ||
             "-",
           odds: (item && item.odds && item.odds / config.ODDS_PRECISION) || "-"
         };

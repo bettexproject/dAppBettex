@@ -8,8 +8,22 @@ const aggregateStack = (_bets, allBets) => {
     const bets = _bets || [];
     const stack = [];
     let lastOdds = null;
+
+    let matched_count = 0;
+    let matched_amount = 0;
+    let total_amount = 0;
+    let total_count = 0;
+
     for (let i = 0; i < bets.length; i++) {
         const bet = allBets[bets[i]];
+
+        total_count++;
+        total_amount += bet.amount;
+        if (bet.matched > 0) {
+            matched_count++;
+            matched_amount += bet.matched;
+        }
+
         if (bet.amount - bet.matched - bet.cancelled < 1) {
             continue;
         }
@@ -17,17 +31,16 @@ const aggregateStack = (_bets, allBets) => {
             stack.push({
                 odds: bet.odds,
                 items: 0,
-                total: 0,
                 matched: 0,
+                unmatched: 0,
             });
             lastOdds = bet.odds;
         }
         const last = stack[stack.length - 1];
         last.items++;
-        last.total += bet.amount;
-        last.matched += bet.matched;
+        last.unmatched += (bet.amount - bet.matched - bet.cancelled);
     }
-    return stack;
+    return { stack, total_count, total_amount, matched_count, matched_amount };
 }
 
 const aggregateStacks = (stacks, allBets) => {
@@ -171,7 +184,7 @@ module.exports = (app) => {
             return savedState;
         },
         lastConfirmedState: async () => {
-            const currentHeight = app.currentHeight;
+            const currentHeight = app.currentHeight || 0;
             const lastConfirmedRecord = await snapModel.find({
                 blockNumber: { $lt: currentHeight - config.rescanDepth }
             },

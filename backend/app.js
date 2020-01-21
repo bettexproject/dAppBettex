@@ -7,8 +7,9 @@ const api = require('./api');
 const app = {};
 
 models(app).then(() => {
+
     scanner(app);
-    miner(app);
+    // miner(app);
     // sportr(app);
     api(app);
 });
