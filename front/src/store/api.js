@@ -21,7 +21,7 @@ export default {
     loginLS: authLS,
     loginMetamask: authMetamask,
     makeDeposit: async (auth, amount) => {
-        auth.signEthTx({
+        return auth.signEthTx({
             from: auth.address,
             to: config.escrowAddress,
             value: 0,
@@ -30,7 +30,7 @@ export default {
         });
     },
     bet: async (auth, params) => {
-        auth.signEthTx({
+        return auth.signEthTx({
             from: auth.address,
             to: config.escrowAddress,
             value: 0,
@@ -40,6 +40,15 @@ export default {
                 params.amount * config.decimalMultiplicator,
                 params.odds * config.ODDS_PRECISION,
                 params.side === 'for').encodeABI(),
+        });
+    },
+    cancelBet: async (auth, betid) => {
+        return auth.signEthTx({
+            from: auth.address,
+            to: config.escrowAddress,
+            value: 0,
+            gasPrice: await gasPrice(),
+            data: contract.methods.cancel(betid).encodeABI(),
         });
     },
 };

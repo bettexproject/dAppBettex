@@ -134,6 +134,7 @@ module.exports = (app) => {
 
                     state.allBets.push(bet);
                     const betIndex = state.allBets.length - 1;
+                    bet.betid = betIndex + 1;
                     state.eventStacks[eventKey] = state.eventStacks[eventKey] || {
                         betsFor: [],
                         betsAgainst: [],
@@ -159,6 +160,17 @@ module.exports = (app) => {
                     state.balanceOfAccount[tx.account] -= input.amount;
                 }
             }
+
+            if (input.name === 'cancel') {
+                const cancel_bet = state.allBets[input.betid - 1];
+                if (cancel_bet && (cancel_bet.account === tx.account)) {
+                    const cancel_amount = cancel_bet.amount - cancel_bet.matched - cancel_bet.cancelled;
+                    if (cancel_amount > 0) {
+                        state.balanceOfAccount[tx.account] += cancel_amount;
+                        cancel_bet.cancelled += cancel_amount;
+                    }
+                }
+            }
         },
 
         /**
@@ -176,7 +188,7 @@ module.exports = (app) => {
             for (let i = 0; i < additionalTxs.length; i++) {
                 const tx = additionalTxs[i];
                 if (prevBlock && (tx.blockNumber > prevBlock) && (tx.blockNumber > 0) && (tx.blockNumber < app.currentHeight - config.rescanDepth)) {
-                    await snapModel.create({ blockNumber: prevBlock, state: JSON.stringify(savedState) });
+                    // await snapModel.create({ blockNumber: prevBlock, state: JSON.stringify(savedState) });
                 }
                 prevBlock = tx.blockNumber;
                 snap.replayTx(savedState, tx);

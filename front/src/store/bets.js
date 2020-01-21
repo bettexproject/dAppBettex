@@ -7,16 +7,17 @@ const extendBets = (bets, events) => {
     return(_.map(bets, bet => {
         const event = events[bet.eventid];
         const eventName = (event && event.teams) ? `${event.teams[0].name} - ${event.teams[1].name}` : '';
+        const matchable = (bet.amount - bet.matched - bet.cancelled) > 0;
         return {
             ...bet,
-            isOpen: (bet.amount - bet.matched) >= 1,
-            isPlaced: (bet.amount - bet.matched) < 1,
+            isOpen: matchable && ((bet.amount - bet.matched) >= 1),
+            isPlaced: matchable && ((bet.amount - bet.matched) < 1),
             side: bet.side ? 'for' : 'against',
             odds: bet.odds,
             asset: 'USD',
             eventName,
             subevent: config.subevents[bet.subevent],
-            cancellable: bet.amount > bet.matched,
+            cancellable: bet.amount > bet.matched + bet.cancelled,
             spentNominal: bet.matched / config.decimalMultiplicator,
             amountNominal: bet.amount / config.decimalMultiplicator,
         }
@@ -33,6 +34,9 @@ export default {
     actions: {
         bet({ commit, getters}, params) {
             api.bet(getters.getAuth, params);
+        },
+        cancelBet({ getters }, params) {
+            api.cancelBet(getters.getAuth, params);
         },
     },
     getters: {

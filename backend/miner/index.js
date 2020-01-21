@@ -86,6 +86,12 @@ const miner = {
                     }
                     compressedData.push(`0x${uint2bytes32(0)}`);
                 }
+                if (chainItem.type === 'cancel') {
+                    compressedData.push(`0x${str2bytes32(chainItem.type)}`);
+                    for (let j = 2 + 64; j < 2 + 64 + 2*64; j += 64) {
+                        compressedData.push(`0x${chainItem.data.substr(j, 64)}`);
+                    }
+                }
             });
         });
 

@@ -57,10 +57,10 @@ module.exports = (app) => {
         extendByStacks: (records) => {
             const inputArray = Array.isArray(records) ? records : [records];
             const outputArray = _.map(inputArray, record => {
-                return {
+                return record ? {
                     ...record.toObject ? record.toObject() : record,
                     stacks: app.models.snap.getEventStacks(record.external_id),
-                };
+                } : {};
             });
 
             return Array.isArray(records) ? outputArray : outputArray[0];

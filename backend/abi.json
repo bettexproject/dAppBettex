@@ -219,6 +219,72 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
+				"name": "betid",
+				"type": "uint256"
+			}
+		],
+		"name": "cancel",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "blocknumber",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "betid",
+				"type": "uint256"
+			}
+		],
+		"name": "Cancel",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "betid",
+				"type": "uint256"
+			}
+		],
+		"name": "CancelPlayFailed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "betid",
+				"type": "uint256"
+			}
+		],
+		"name": "CancelPlayed",
+		"type": "event"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256",
 				"name": "amount",
 				"type": "uint256"
 			}
@@ -285,6 +351,19 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "OutOfGasWhilePayout",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
 				"name": "blocknumber",
 				"type": "uint256"
 			},
@@ -296,6 +375,25 @@
 			}
 		],
 		"name": "OutOfGasWhileReplay",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "PayoutWinnings",
 		"type": "event"
 	},
 	{
@@ -317,6 +415,57 @@
 		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "minGas",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "bets",
+				"type": "uint256[]"
+			}
+		],
+		"name": "processWinnings",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint64",
+				"name": "eventid",
+				"type": "uint64"
+			},
+			{
+				"internalType": "uint64",
+				"name": "subevent",
+				"type": "uint64"
+			},
+			{
+				"internalType": "uint256",
+				"name": "state",
+				"type": "uint256"
+			}
+		],
+		"name": "setEventResult",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [],
+		"name": "WinningsFinished",
+		"type": "event"
 	},
 	{
 		"constant": false,
@@ -424,6 +573,11 @@
 				"type": "bool"
 			},
 			{
+				"internalType": "bool",
+				"name": "paid",
+				"type": "bool"
+			},
+			{
 				"internalType": "uint64",
 				"name": "eventid",
 				"type": "uint64"
@@ -450,6 +604,11 @@
 			},
 			{
 				"internalType": "uint64",
+				"name": "matched_peer",
+				"type": "uint64"
+			},
+			{
+				"internalType": "uint64",
 				"name": "cancelled",
 				"type": "uint64"
 			}
@@ -461,7 +620,58 @@
 	{
 		"constant": true,
 		"inputs": [],
+		"name": "allBetsSeq",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
 		"name": "contractCreated",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "creator",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "eventState",
 		"outputs": [
 			{
 				"internalType": "uint256",

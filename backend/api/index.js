@@ -57,7 +57,7 @@ module.exports = (app) => {
                     app.models.sportr.getEventsByBets(bets).then(events => {
                         socket.emit('events', app.models.sportr.extendByStacks(events));
                         _.forEach(events, event => {
-                            api.subscribe(socket, `onChange event ${event.external_id}`)
+                            event && api.subscribe(socket, `onChange event ${event.external_id}`)
                         });
                     });
                 }
