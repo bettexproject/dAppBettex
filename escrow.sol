@@ -18,6 +18,176 @@ contract BettexEth is usingProvable {
     mapping (uint => bytes32) public proofsByBlock;
     mapping (address => uint) public userBalances;
     
+    /* event results */
+    event FetchEventNeedGas(uint needGas);
+    
+    mapping (bytes32 => address) public provenByAddress;    
+    
+    function __callback(bytes32 myid, string memory result) public {
+        myid;
+        bytes32 hash = keccak256(abi.encodePacked(result));
+        provenByAddress[hash] = msg.sender;
+    }
+    
+    function fetchEventResult (uint sportId, uint year, uint month, uint day, uint country, uint league, uint matchId, uint gasForCb) public payable {
+        uint gasForProvable = provable_getPrice("URL", gasForCb);
+        
+        if (msg.value < gasForProvable) {
+            msg.sender.transfer(msg.value);
+            emit FetchEventNeedGas(gasForProvable);
+        } else {
+            bytes memory url = abi.encodePacked("json(https://ls.fn.sportradar.com/winline/en/Asia:Yekaterinburg/gismo/sport_matches/",
+                uint2str(sportId),
+                "/",
+                uint2str(year),
+                "-",
+                uint2str_pad(month),
+                "-",
+                uint2str_pad(day),
+                "/0).doc[0].data.sport.realcategories[",
+                uint2str(country),
+                "].tournaments[",
+                uint2str(league),
+                "].matches[",
+                uint2str(matchId),
+                "]"
+            );
+            
+            provable_query("URL", string(url), gasForCb);
+            msg.sender.transfer(msg.value - gasForProvable);
+        }
+    }
+
+   function bytes2uint(bytes memory s, uint start, uint end) internal pure returns (uint64) {
+        uint64 retval = 0;
+        for (uint i = start; i < end; i++) {
+            retval = retval * 10 + (uint8(s[i]) - 48);
+        }
+        return retval;
+    }
+    
+    function bytesSlice(bytes memory s, uint start, uint end) internal pure returns (bytes memory) {
+        bytes memory retval = new bytes(end - start);
+        for (uint i = start; i < end; i++) {
+            retval[i - start] = s[i];
+        }
+        return retval;
+    }
+
+ 
+    bytes32 constant keccak_id = keccak256(abi.encodePacked("_id"));
+    bytes32 constant keccak_status = keccak256(abi.encodePacked("status"));
+    bytes32 constant keccak_periods = keccak256(abi.encodePacked("periods"));
+    bytes32 constant keccak_ft = keccak256(abi.encodePacked("ft"));
+    bytes32 constant keccak_home = keccak256(abi.encodePacked("home"));
+    bytes32 constant keccak_away = keccak256(abi.encodePacked("away"));
+
+    uint constant STATE_VALUE = 0;
+    uint constant STATE_LIST = 1;
+    uint constant STATE_KEY = 2;
+    uint constant STATE_STRINGVALUE = 3;
+    uint constant STATE_INTVALUE = 4;
+    
+    uint64 constant subevent_t1 = 1;
+    uint64 constant subevent_t2 = 2;
+    uint64 constant subevent_draw = 3;
+
+    
+    function parseEventResult(bytes memory input) public {
+        uint64 eventid = 0;
+        uint statusid = 0;
+        uint periods_ft_home = 0;
+        uint periods_ft_away = 0;
+
+        uint state = STATE_VALUE;
+        uint depth = 0;
+        uint stringStart;
+        bytes32[] memory path = new bytes32[](5);
+
+        for (uint p = 0; p < input.length; p++) {
+            byte c = input[p];
+            if (state == STATE_INTVALUE) {
+                if ((c < "0") || (c > "9")) {
+                    // react to int values by some paths
+                    
+                    // _id
+                    if (path[1] == keccak_id) {
+                        eventid = bytes2uint(input, stringStart, p);
+                    }
+                    // status._id
+                    else if ((depth == 2) && (path[1] == keccak_status) && (path[2] == keccak_id)) {
+                        statusid = bytes2uint(input, stringStart, p);
+                    } else if ((depth == 3) && (path[1] == keccak_periods) && (path[2] == keccak_ft)) {
+                        if (path[3] == keccak_home) {
+                            // periods.ft.home
+                            periods_ft_home = bytes2uint(input, stringStart, p);
+                        } else if (path[3] == keccak_away) {
+                            // periods.ft.away
+                            periods_ft_away = bytes2uint(input, stringStart, p);
+                        }
+                    }
+                    state = STATE_LIST;
+                    continue;
+                }
+            }
+            if (state == STATE_VALUE) {
+                if (c == "{") {
+                    state = STATE_LIST;
+                    depth++;
+                    continue;
+                }
+                if (c == "\"") {
+                    state = STATE_STRINGVALUE;
+                    stringStart = p + 1;
+                    continue;
+                }
+                if ((c >= "0") && (c <= "9")) {
+                    stringStart = p;
+                    state = STATE_INTVALUE;
+                    continue;
+                }
+            }
+            if (state == STATE_STRINGVALUE) {
+                if (c == "\"") {
+                    // bytes memory valuestring = bytesSlice(input, stringStart, p);
+                    state = STATE_LIST;
+                    continue;
+                }
+            }
+            if (state == STATE_LIST) {
+                if (c == "\"") {
+                    state = STATE_KEY;
+                    stringStart = p + 1;
+                    continue;
+                }
+                if (c == "}") {
+                    depth--;
+                }
+            }
+            if (state == STATE_KEY) {
+                if (c == "\"") {
+                    bytes memory keystring = bytesSlice(input, stringStart, p);
+                    path[depth] = keccak256(abi.encodePacked(keystring));
+                    state = STATE_VALUE;
+                    continue;
+                }
+            }
+        }
+
+        // finished
+        if ((statusid == 100) || (statusid == 110) || (statusid == 120) || (statusid == 125)) {
+            setEventStatus(eventid, subevent_t1, periods_ft_home > periods_ft_away);
+            setEventStatus(eventid, subevent_t2, periods_ft_home < periods_ft_away);
+            setEventStatus(eventid, subevent_draw, periods_ft_home == periods_ft_away);
+        }
+    }
+    
+    mapping (bytes32 => uint) public eventStatus; // 0 - undefined, 1 - for won, 2 - against won, 3- refund
+    
+    function setEventStatus(uint64 eventid, uint64 subevent, bool isForWon) internal {
+        eventStatus[getEventHash(eventid, subevent)] = isForWon ? 1 : 2;
+    }
+    
     /* deposit */
     event Deposit(uint blocknumber, address account, uint amount);
     event DepositPlayed(address account, uint amount, uint balance);
@@ -97,61 +267,7 @@ contract BettexEth is usingProvable {
     }
     
     mapping (bytes32 => uint) public eventState;
-    /**
-     * event states
-     * 0 - unknown (default)
-     * 1 - won for
-     * 2 - won against
-     * 3 - refund
-    */
-    
-    function setEventResult(uint64 eventid, uint64 subevent, uint state) public {
-        require(msg.sender == creator);
-        bytes32 k = getEventHash(eventid, subevent);
-        require(eventState[k] == 0);
-        eventState[k] = state;
-    }
-    
-    event PayoutWinnings(address account, uint amount);
-    
-    function payout(address account, uint amount) internal {
-        USDT.transfer(account, amount);
-        emit PayoutWinnings(account, amount);
-    }
-    
-    event OutOfGasWhilePayout (uint);
-    event WinningsFinished();
-    
-    function processWinnings(uint minGas, uint[] calldata bets) external {
-        for (uint i = 0; i < bets.length; i++) {
-            if (gasleft() < minGas) {
-                emit OutOfGasWhilePayout(i);
-                return;
-            }
-            BetItem storage b = allBets[bets[i]];
-            bytes32 k = getEventHash(b.eventid, b.subevent);
-            uint betState = eventState[k];
-            
-            if (b.paid) {
-                continue;
-            }
-            if (betState == 0) {
-                continue;
-            }
-            if ((betState == 1) && (b.side)) {
-                payout(b.owner, b.matched + b.matched_peer);
-            }
-            if ((betState == 2) && (!b.side)) {
-                payout(b.owner, b.matched + b.matched_peer);
-            }
-            if (betState == 3) {
-                payout(b.owner, b.matched);
-            }
-            b.paid = true;
-        }
-        emit WinningsFinished();
-    }
-    
+
     mapping (uint => BetItem) public allBets;
     uint public allBetsSeq;
     
@@ -361,42 +477,12 @@ contract BettexEth is usingProvable {
         proofsByBlock[block.number] = keccak256(abi.encodePacked(proofsByBlock[block.number], hash));
     }
 
-    
-    // function proveAsEvent(uint8 sportId, uint32 year, uint8 month, uint8 day, uint32 country, uint32 league, uint32 matchId) public returns (string memory) {
-    //     bytes memory url = abi.encodePacked("json(https://ls.fn.sportradar.com/winline/en/Asia:Yekaterinburg/gismo/sport_matches/",
-    //         uint2str(sportId),
-    //         "/",
-    //         uint2str(year),
-    //         "-",
-    //         uint2str_pad(month),
-    //         "-",
-    //         uint2str_pad(day),
-    //         "/0).doc[0].data.sport.realcategories[",
-    //         uint2str(country),
-    //         "].tournaments[",
-    //         uint2str(league),
-    //         "].matches[",
-    //         uint2str(matchId),
-    //         "]"
-    //     );
-        
-    //     provable_query("URL", string(url));
-    // }
-    
-    // function __callback(bytes32 myid, string memory result) public {
-    //     require (msg.sender == provable_cbAddress());
-    //     bytes32 resultHash = keccak256(abi.encodePacked(result));
-    //     provenItems[resultHash] = true;
-    //     myid = 0;
-    // }
-
-
-    // function uint2str_pad(uint i) internal pure returns (string memory s) {
-    //     if (i >= 10) {
-    //         return uint2str(i);
-    //     }
-    //     return string(abi.encodePacked("0", uint2str(i)));
-    // }
+    function uint2str_pad(uint i) internal pure returns (string memory s) {
+        if (i >= 10) {
+            return uint2str(i);
+        }
+        return string(abi.encodePacked("0", uint2str(i)));
+    }
     
     function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
         if (_i == 0) {
@@ -436,27 +522,26 @@ contract BettexEth is usingProvable {
     //     return string(bstr);
     // }
     
-    // function fromHexChar(byte c) internal pure returns (uint) {
-    //     if (byte(c) >= byte('0') && byte(c) <= byte('9')) {
-    //         return uint8(c) - uint8(byte('0'));
-    //     }
-    //     if (byte(c) >= byte('a') && byte(c) <= byte('f')) {
-    //         return 10 + uint8(c) - uint8(byte('a'));
-    //     }
-    //     if (byte(c) >= byte('A') && byte(c) <= byte('F')) {
-    //         return 10 + uint8(c) - uint8(byte('A'));
-    //     }
-    // }
+    function fromHexChar(byte c) internal pure returns (uint) {
+        if (byte(c) >= byte('0') && byte(c) <= byte('9')) {
+            return uint8(c) - uint8(byte('0'));
+        }
+        if (byte(c) >= byte('a') && byte(c) <= byte('f')) {
+            return 10 + uint8(c) - uint8(byte('a'));
+        }
+        if (byte(c) >= byte('A') && byte(c) <= byte('F')) {
+            return 10 + uint8(c) - uint8(byte('A'));
+        }
+    }
 
-    // // Convert an hexadecimal string to raw bytes
-    // function fromHex(string memory s) public pure returns (uint) {
-    //     bytes memory ss = bytes(s);
-    //     uint r = 0;
-    //     for (uint i = 0; i < ss.length; i++) {
-    //         r = r * 16 + fromHexChar(ss[i]);
-    //     }
-    //     return r;
-    // }
+    // Convert an hexadecimal string to raw bytes
+    function fromHex(bytes memory ss, uint start, uint end) public pure returns (uint) {
+        uint r = 0;
+        for (uint i = start; i < end; i++) {
+            r = r * 16 + fromHexChar(ss[i]);
+        }
+        return r;
+    }
     
     /* iterator */
     
