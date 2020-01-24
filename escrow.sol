@@ -205,21 +205,6 @@ contract BettexEth is usingProvable {
         emit PayoutRequest (block.number, bets);
     }
     
-    /*
-            address owner;
-        bool side;
-        bool paid;
-        uint64 eventid;
-        uint64 subevent;
-
-        uint64 amount;
-        uint64 odds;
-        uint64 matched;
-        uint64 matched_peer;
-        uint64 cancelled;
-
-    */
-    
     // return unmatched
     function paycancel(uint betid) internal {
         BetItem storage bet = allBets[betid];
@@ -554,7 +539,16 @@ contract BettexEth is usingProvable {
                         } else {
                             currentHash = keccak256(abi.encodePacked(currentHash, cancelHash(account, betid)));
                         }
+                    }
 
+                    if (action == bytes32("payouts")) {
+                        uint betlen = uint256(compressedActions[pos++]);
+                        uint[] memory bets = new uint[](betlen);
+                        if (commit && (i >= startCommitWith)) {
+                            processPayouts(bets);
+                        } else {
+                            currentHash = keccak256(abi.encodePacked(currentHash, payoutHash(bets)));
+                        }
                     }
                 }
                 if (commit) {
