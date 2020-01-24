@@ -91,7 +91,6 @@ contract BettexEth is usingProvable {
     uint64 constant subevent_t1 = 1;
     uint64 constant subevent_t2 = 2;
     uint64 constant subevent_draw = 3;
-
     
     function parseEventResult(bytes memory input) public {
         uint64 eventid = 0;
@@ -186,6 +185,102 @@ contract BettexEth is usingProvable {
     
     function setEventStatus(uint64 eventid, uint64 subevent, bool isForWon) internal {
         eventStatus[getEventHash(eventid, subevent)] = isForWon ? 1 : 2;
+    }
+    
+    function getEventStatus(uint64 eventid, uint64 subevent) internal view returns (uint) {
+        return eventStatus[getEventHash(eventid, subevent)];
+    }
+    
+    function payoutHash(uint[] memory bets) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked("payout", bets));
+    }
+    
+    event PayoutRequest (uint blocknumber, uint[] bets);
+    event PayoutDone (address account, uint amount, uint bet);
+    event CancelDone(address account, uint amount, uint bet);
+    event RefundDone(address account, uint amount, uint bet);
+    
+    function payouts(uint[] calldata bets) external {
+        addActionProof(payoutHash(bets));
+        emit PayoutRequest (block.number, bets);
+    }
+    
+    /*
+            address owner;
+        bool side;
+        bool paid;
+        uint64 eventid;
+        uint64 subevent;
+
+        uint64 amount;
+        uint64 odds;
+        uint64 matched;
+        uint64 matched_peer;
+        uint64 cancelled;
+
+    */
+    
+    // return unmatched
+    function paycancel(uint betid) internal {
+        BetItem storage bet = allBets[betid];
+        uint amount = bet.amount - bet.matched - bet.cancelled;
+        USDT.transfer(bet.owner, amount);
+        emit CancelDone(bet.owner, amount, betid);
+    }
+
+    // return matched + unmatched
+    function payrefund(uint betid) internal {
+        BetItem storage bet = allBets[betid];
+        uint amount = bet.amount - bet.cancelled;
+        USDT.transfer(bet.owner, amount);
+        emit RefundDone(bet.owner, amount, betid);
+    }
+    
+    // return unmatched + matched + matched_peer
+    function payout(uint betid) internal {
+        BetItem storage bet = allBets[betid];
+        // unmatched + matched + matched_peer
+        uint amount = bet.amount - bet.cancelled + bet.matched_peer;
+        USDT.transfer(bet.owner, amount);
+        emit PayoutDone(bet.owner, amount, betid);
+    }
+    
+    function processPayouts(uint[] memory bets) internal {
+        for (uint i = 0; i < bets.length; i++) {
+            uint betid = bets[i];
+            BetItem storage bet = allBets[betid];
+            
+            if (bet.paid) {
+                continue;
+            }
+            
+            uint betResult = getEventStatus(bet.eventid, bet.subevent);
+            if (betResult == 0) {
+                continue;
+            }
+            
+            if ((betResult == 1) && bet.side) {
+                payout(betid);
+            }
+
+            if ((betResult == 1) && !bet.side) {
+                paycancel(betid);
+            }
+
+            if ((betResult == 2) && !bet.side) {
+                payout(betid);
+            }
+
+            if ((betResult == 2) && bet.side) {
+                paycancel(betid);
+            }
+            
+            if (betResult == 3) {
+                payrefund(betid);
+            }
+            
+            bet.paid = true;
+        }
     }
     
     /* deposit */
