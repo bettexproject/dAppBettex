@@ -49,13 +49,13 @@ module.exports = (app) => {
                 }
                 if (what === 'events') {
                     app.models.sportr.getEvents(params)
-                        .then(events => socket.emit('events', app.models.sportr.extendByStacks(events)));
+                        .then(events => socket.emit('events', app.models.sportr.extendByStacksAndResults(events)));
                 }
                 if (what === 'bets') {
                     const bets = app.models.snap.getAccountBets(params);
                     socket.emit(`bets-${params}`, bets);
                     app.models.sportr.getEventsByBets(bets).then(events => {
-                        socket.emit('events', app.models.sportr.extendByStacks(events));
+                        socket.emit('events', app.models.sportr.extendByStacksAndResults(events));
                         _.forEach(events, event => {
                             event && api.subscribe(socket, `onChange event ${event.external_id}`)
                         });

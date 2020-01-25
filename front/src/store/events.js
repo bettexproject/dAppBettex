@@ -55,7 +55,7 @@ const extendEvents = (events) => {
     return {
       ...event,
       isRunning: isRunning(event),
-      isFinished: isFinished(event),
+      isFinished: false && isFinished(event),
       total_count,
       matched_amount,
       matched_count,
@@ -146,7 +146,7 @@ const checkIntervalFromNow = (event, from, fromunit, to, tounit) => {
 const convertEvents = (rawEvents) => {
   const ret = {};
   _.forEach(rawEvents, event => {
-    ret[event.external_id] = { ...event, teams: JSON.parse(event.teams) };
+    ret[event.external_id] = event;
   });
   return ret;
 };

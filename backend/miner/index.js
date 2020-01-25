@@ -1,10 +1,12 @@
 const Web3 = require('web3');
+const _ = require('lodash');
 const { uint2bytes32, str2bytes32, callContract } = require('../utils');
+const { findEventIdx } = require('../subeventresults');
 const config = require('../config');
 
 const web3 = new Web3(config.web3URL);
 const contract = new web3.eth.Contract(config.abi, config.escrowAddress);
-const senderAccount = web3.eth.accounts.privateKeyToAccount(config.privKey);
+const senderAccount = web3.eth.accounts.privateKeyToAccount(config.minerPrivKey);
 
 const miner = {
     sendCompressed: async (compressedActions) => {
@@ -16,7 +18,7 @@ const miner = {
             nonce,
             3000000,
             Math.round(config.minerGasPrice),
-            config.privKey)
+            config.minerPrivKey)
             .catch(console.log);
 
     },
@@ -37,7 +39,7 @@ const miner = {
                 const compressedActions = [];
                 compressedActions.push(`0x${uint2bytes32(lastMined + config.forceMineEmpty)}`);
                 compressedActions.push(`0x${uint2bytes32(0)}`);
-                await miner.sendCompressed(compressedActions);    
+                await miner.sendCompressed(compressedActions);
             }
         }
     },
@@ -60,7 +62,7 @@ const miner = {
             byBlocks = {};
             byBlocks[breakOnBlock] = [];
         }
-        
+
         blockNumbers.forEach(blockNumber => {
             const chainLength = byBlocks[blockNumber].length;
             compressedData.push(`0x${uint2bytes32(blockNumber)}`);
@@ -69,26 +71,26 @@ const miner = {
             byBlocks[blockNumber].forEach(chainItem => {
                 if (chainItem.type === 'deposit') {
                     compressedData.push(`0x${str2bytes32(chainItem.type)}`);
-                    for (let j = 2 + 64; j < 2 + 64 + 2*64; j += 64) {
+                    for (let j = 2 + 64; j < 2 + 64 + 2 * 64; j += 64) {
                         compressedData.push(`0x${chainItem.data.substr(j, 64)}`);
                     }
                 }
                 if (chainItem.type === 'withdraw') {
                     compressedData.push(`0x${str2bytes32(chainItem.type)}`);
-                    for (let j = 2 + 64; j < 2 + 64 + 2*64; j += 64) {
+                    for (let j = 2 + 64; j < 2 + 64 + 2 * 64; j += 64) {
                         compressedData.push(`0x${chainItem.data.substr(j, 64)}`);
                     }
                 }
                 if (chainItem.type === 'bet') {
                     compressedData.push(`0x${str2bytes32(chainItem.type)}`);
-                    for (let j = 2 + 64; j < 2 + 64 + 6*64; j += 64) {
+                    for (let j = 2 + 64; j < 2 + 64 + 6 * 64; j += 64) {
                         compressedData.push(`0x${chainItem.data.substr(j, 64)}`);
                     }
                     compressedData.push(`0x${uint2bytes32(0)}`);
                 }
                 if (chainItem.type === 'cancel') {
                     compressedData.push(`0x${str2bytes32(chainItem.type)}`);
-                    for (let j = 2 + 64; j < 2 + 64 + 2*64; j += 64) {
+                    for (let j = 2 + 64; j < 2 + 64 + 2 * 64; j += 64) {
                         compressedData.push(`0x${chainItem.data.substr(j, 64)}`);
                     }
                 }
@@ -100,9 +102,32 @@ const miner = {
         return compressedData;
     },
 
+    fetchEventProofs: async () => {
+        for (; ;) {
+            try {
+                const need2fetch = _.keys(miner.app.models.unpaid.events2fetch);
+                if (need2fetch.length > 0) {
+                    const eventid = need2fetch[0];
+                    // await app.models.sportr.updateFetchResult(eventid, 'pending');
+                    const lastEvent = await miner.app.models.sportr.findById(eventid);
+                    if (lastEvent) {
+                        const updatedEvent = await findEventIdx(lastEvent);
+                        if (updatedEvent) {
+                            const { countryId, leagueId, matchId } = updatedEvent;
+                            console.log(updatedEvent);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log(e);
+            }
+            await new Promise(r => setTimeout(r, 10000));
+        }
+    },
 };
 
 module.exports = (app) => {
     miner.app = app;
     miner.endlessScan();
+    miner.fetchEventProofs();
 };

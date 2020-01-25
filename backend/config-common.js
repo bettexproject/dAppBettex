@@ -2,24 +2,6 @@ const fs = require('fs');
 const abi = JSON.parse(fs.readFileSync('./abi.json'));
 
 module.exports = {
-    sports: [1, 2, 4, 5],
-    countryWhitelist: [
-        'England',
-        'France',
-        'Germany',
-        'International',
-        'International Clubs',
-        'Italy',
-        'Netherlands',
-        'Portugal',
-        'Russia',
-        'Spain',
-        'Ukraine',
-        'USA',
-        'ATP',
-        'WTA',
-    ],
-
     ODDS_PRECISION: 100,
 
     subevents: {

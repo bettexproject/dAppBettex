@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const { getEventResultsFromPlane } = require('../subeventresults');
 
 module.exports = (app) => {
     const sportrSchema = new app.mongoose.Schema({
@@ -19,7 +20,13 @@ module.exports = (app) => {
         ended: Number,
 
         teams: String,
+
+        date: String,
+        sportId: Number,
+
+        fetchResult: String,
     });
+
 
     sportrSchema.index({ sport: 1 });
     sportrSchema.index({ sport: 1, country: 1 });
@@ -49,17 +56,33 @@ module.exports = (app) => {
             record.ptime = params.ptime;
             record.ended = params.ended;
 
+            record.date = params.date;
+            record.sportId = params.sportId;
+
             record.teams = JSON.stringify(params.teams);
 
             await record.save();
             app.models.sportr.notifyChange(record);
         },
-        extendByStacks: (records) => {
+        updateFetchResult: async (id, fetchResult) => {
+            const record = await sportrModel.findOne({ external_id: params.external_id });
+            if (record) {
+                record.fetchResult = fetchResult;
+                await record.save();
+            }
+        },
+        extendByStacksAndResults: (records) => {
             const inputArray = Array.isArray(records) ? records : [records];
             const outputArray = _.map(inputArray, record => {
+                if (!record) {
+                    return {};
+                }
+                const r = record && record.toObject ? record.toObject() : record;
                 return record ? {
-                    ...record.toObject ? record.toObject() : record,
-                    stacks: app.models.snap.getEventStacks(record.external_id),
+                    ...r,
+                    teams: r.teams ? JSON.parse(r.teams) : null,
+                    stacks: app.models.snap.getEventStacks(r.external_id),
+                    results: getEventResultsFromPlane(r),
                 } : {};
             });
 
@@ -71,21 +94,29 @@ module.exports = (app) => {
             _.forEach(bets, bet => events[bet.eventid] = true);
             const idsKeys = _.keys(events);
             for (let i = 0; i < idsKeys.length; i++) {
-                events[idsKeys[i]] = await sportrModel.findOne({ external_id: idsKeys[i]});
+                events[idsKeys[i]] = await sportrModel.findOne({ external_id: idsKeys[i] });
             }
             return _.values(events);
         },
 
+        findById: async (eventid) => {
+            return await sportrModel.findOne({ external_id: eventid });
+        },
+
         notifyChange: (record) => {
+            const extendedRecord = app.models.sportr.extendByStacksAndResults(record);
             if (app.api.fireEvent) {
                 const updateEvent = {
                     update: 'sportr',
-                    data: app.models.sportr.extendByStacks(record),
+                    data: extendedRecord,
                 };
                 app.api.fireEvent(`onChange sport ${record.sport}`, updateEvent);
                 app.api.fireEvent(`onChange country ${record.sport}-${record.country}`, updateEvent);
                 app.api.fireEvent(`onChange league ${record.sport}-${record.country}-${record.league}`, updateEvent);
                 app.api.fireEvent(`onChange event ${record.external_id}`, updateEvent);
+            }
+            if (app.models.unpaid && app.models.unpaid.onEventChanged) {
+                app.models.unpaid.onEventChanged(extendedRecord);
             }
         },
         notifyChangeById: async (eventid) => {

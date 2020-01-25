@@ -1,7 +1,9 @@
+const { subeventsReverse } = require('./subevents');
+
 const axios = require('axios');
 const _ = require('lodash');
 
-const isFinished = (event) => ([100, 110, 120, 125].indexOf(event.status) >= 0);
+const isFinished = (event) => ([100, 110, 120, 125].indexOf(parseInt(event.status)) >= 0);
 const sportHasDraw = (sport) => (['Soccer'].indexOf(sport) >= 0);
 const sports = [1, 2, 4, 5];
 const countryWhitelist = [
@@ -30,13 +32,18 @@ const ex = {
     },
     getEventResultsFromStruct: (event) => {
         const results = {};
-        results.t1 = isFinished(event) ? (event.teams[0].ft > event.teams[1].ft) : null;
-        results.t2 = isFinished(event) ? (event.teams[0].ft < event.teams[1].ft) : null;
-        results.draw = (!isFinished(event) || !sportHasDraw(event.sport)) ? null : (event.teams[0].ft === event.teams[1].ft);
+        results[subeventsReverse.t1] = isFinished(event) ? (event.teams[0].ft > event.teams[1].ft) : null;
+        results[subeventsReverse.t2] = isFinished(event) ? (event.teams[0].ft < event.teams[1].ft) : null;
+        results[subeventsReverse.draw] = (!isFinished(event) || !sportHasDraw(event.sport)) ? null : (event.teams[0].ft === event.teams[1].ft);
         return results;
     },
     getEventResultsFromPlane: (event) => {
         return ex.getEventResultsFromStruct(ex.convertPlaneToStruct(event));
+    },
+    findEventIdx: async (event) => {
+        const data = {};
+        await ex.importForDate(event.date, data, event.sportId);
+        return data[event.external_id];
     },
     importForDate: async (date, data, filterSport) => {
         for (let sportIdx = 0; sportIdx < sports.length; sportIdx++) {
@@ -47,12 +54,12 @@ const ex = {
                 .catch((e) => { console.log('error in sports parse', e) });
             if (apiRequest && apiRequest.data && apiRequest.data.doc && apiRequest.data.doc[0]) {
                 const sportName = apiRequest.data.doc[0].data.sport.name;
-                _.forEach(apiRequest.data.doc[0].data.sport.realcategories, country => {
+                _.forEach(apiRequest.data.doc[0].data.sport.realcategories, (country, countryId) => {
                     const countryName = country.name;
                     if (countryWhitelist.indexOf(countryName) >= 0) {
-                        _.forEach(country.tournaments, league => {
+                        _.forEach(country.tournaments, (league, leagueId) => {
                             const leaugueName = league.name;
-                            _.forEach(league.matches, match => {
+                            _.forEach(league.matches, (match, matchId) => {
                                 const teamInfo = _.map(['home', 'away'], teamId => {
                                     return {
                                         name: match.teams[teamId].mediumname,
@@ -73,6 +80,10 @@ const ex = {
                                     ptime: match.ptime,
                                     ended: match.ended_uts,
                                     teams: teamInfo,
+                                    date,
+                                    matchId,
+                                    leagueId,
+                                    countryId,
                                 };
                             });
                         });

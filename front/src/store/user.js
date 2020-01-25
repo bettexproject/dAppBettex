@@ -58,6 +58,7 @@ export default {
     },
     getters: {
         getAuth: state => state.auth,
+        getAuthName: (state, getters) => getters.getAuth && getters.getAuth.name,
         getUserAddress: (state, getters) => getters.getAuth && getters.getAuth.address,
         isLoggedIn: (state, getters) => !!getters.getAuth,
         getBalance: (state) => state.balance / config.decimalMultiplicator,

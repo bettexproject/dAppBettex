@@ -130,11 +130,16 @@ module.exports = (app) => {
                         matched_peer: 0,
                         cancelled: 0,
                         hash: tx.hash,
+                        paid: false,
                     };
 
                     state.allBets.push(bet);
                     const betIndex = state.allBets.length - 1;
                     bet.betid = betIndex + 1;
+
+                    state.betsByEvents[eventKey] = state.betsByEvents[eventKey] || [];
+                    state.betsByEvents[eventKey].push(bet.betid);
+
                     state.eventStacks[eventKey] = state.eventStacks[eventKey] || {
                         betsFor: [],
                         betsAgainst: [],
@@ -182,6 +187,7 @@ module.exports = (app) => {
                 balanceOfAccount: {},
                 eventStacks: {},
                 allBets: [],
+                betsByEvents: {},
             };
             const additionalTxs = await app.models.proofEvent.txsFrom(stateRecord ? stateRecord.blockNumber : 1);
             let prevBlock = null;
