@@ -24,7 +24,7 @@ module.exports = (app) => {
         date: String,
         sportId: Number,
 
-        fetchResult: String,
+        fetchTx: String,
     });
 
 
@@ -64,13 +64,6 @@ module.exports = (app) => {
             await record.save();
             app.models.sportr.notifyChange(record);
         },
-        updateFetchResult: async (id, fetchResult) => {
-            const record = await sportrModel.findOne({ external_id: params.external_id });
-            if (record) {
-                record.fetchResult = fetchResult;
-                await record.save();
-            }
-        },
         extendByStacksAndResults: (records) => {
             const inputArray = Array.isArray(records) ? records : [records];
             const outputArray = _.map(inputArray, record => {
@@ -87,6 +80,29 @@ module.exports = (app) => {
             });
 
             return Array.isArray(records) ? outputArray : outputArray[0];
+        },
+
+        getUnfetchedProofs: async () => {
+            const matchedUnpaid = app.models.snap.getMatchedUnpaidSubevents();
+            const eventsH = {};
+            _.forEach(matchedUnpaid, (d, i) => eventsH[(i.split('-'))[0]] = true);
+            const events = _.keys(eventsH);
+            const ret = {};
+            for (let i = 0; i < events.length; i++) {
+                const record = await sportrModel.findOne({ external_id: events[i] });
+                if (record && !record.fetchTx) {
+                    const extendedRecord = app.models.sportr.extendByStacksAndResults(record);
+                    _.forEach(extendedRecord.results, (result, subevent) => {
+                        if ((result === true) || (result === false)) {
+                            const eventKey = `${record.external_id}-${subevent}`;
+                            if (matchedUnpaid[eventKey]) {
+                                ret[extendedRecord.external_id] = true;
+                            }
+                        }
+                    });
+                }
+            }
+            return _.keys(ret);
         },
 
         getEventsByBets: async (bets) => {

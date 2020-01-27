@@ -84,6 +84,7 @@ const ex = {
                                     matchId,
                                     leagueId,
                                     countryId,
+                                    sportId: sports[sportIdx],
                                 };
                             });
                         });

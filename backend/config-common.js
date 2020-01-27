@@ -1,5 +1,5 @@
 const fs = require('fs');
-const abi = JSON.parse(fs.readFileSync('./abi.json'));
+const abi = require('./abi');
 
 module.exports = {
     ODDS_PRECISION: 100,

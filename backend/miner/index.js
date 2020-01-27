@@ -6,12 +6,13 @@ const config = require('../config');
 
 const web3 = new Web3(config.web3URL);
 const contract = new web3.eth.Contract(config.abi, config.escrowAddress);
-const senderAccount = web3.eth.accounts.privateKeyToAccount(config.minerPrivKey);
+const minerAccount = web3.eth.accounts.privateKeyToAccount(config.minerPrivKey);
+const eventAccount = web3.eth.accounts.privateKeyToAccount(config.eventPrivKey);
 
 const miner = {
     sendCompressed: async (compressedActions) => {
         const callData = contract.methods.playback(1000000, compressedActions).encodeABI();
-        const nonce = await web3.eth.getTransactionCount(senderAccount.address);
+        const nonce = await web3.eth.getTransactionCount(minerAccount.address);
         return await callContract(config.escrowAddress,
             0,
             callData,
@@ -105,19 +106,48 @@ const miner = {
     fetchEventProofs: async () => {
         for (; ;) {
             try {
-                const need2fetch = _.keys(miner.app.models.unpaid.events2fetch);
-                if (need2fetch.length > 0) {
-                    const eventid = need2fetch[0];
-                    // await app.models.sportr.updateFetchResult(eventid, 'pending');
-                    const lastEvent = await miner.app.models.sportr.findById(eventid);
-                    if (lastEvent) {
-                        const updatedEvent = await findEventIdx(lastEvent);
-                        if (updatedEvent) {
-                            const { countryId, leagueId, matchId } = updatedEvent;
-                            console.log(updatedEvent);
-                        }
-                    }
-                }
+                const need2fetch = await miner.app.models.sportr.getUnfetchedProofs();
+                console.log(need2fetch);
+                // if (need2fetch.length > 0) {
+                //     const eventid = need2fetch[0];
+                //     delete(miner.app.models.unpaid.events2fetch[eventid]);
+
+                //     await miner.app.models.sportr.updateFetchResult(eventid, 'pending');
+
+                //     const lastEvent = await miner.app.models.sportr.findById(eventid);
+                //     if (lastEvent) {
+                //         const updatedEvent = await findEventIdx(lastEvent);
+                //         if (updatedEvent) {
+                //             const { sportId, countryId, leagueId, matchId, date } = updatedEvent;
+                //             const datesplit = date.split('-');
+                //             console.log(updatedEvent);
+                //             const callData =
+                //                 contract.methods.fetchEventResult(sportId,
+                //                     datesplit[0],
+                //                     datesplit[1],
+                //                     datesplit[2],
+                //                     countryId,
+                //                     leagueId,
+                //                     matchId,
+                //                     config.eventProvableGasAmount).encodeABI();
+                //             console.log(callData);
+
+                //             const nonce = await web3.eth.getTransactionCount(eventAccount.address);
+                //             const tx = await callContract(config.escrowAddress,
+                //                 config.eventProvableContribution,
+                //                 callData,
+                //                 nonce,
+                //                 config.eventGasLimit,
+                //                 Math.round(config.eventGasPrice),
+                //                 config.eventPrivKey)
+                //                 .catch(console.log);
+
+                //             if (tx && tx.transactionHash) {
+                //                 await miner.app.models.sportr.updateFetchResult(eventid, tx.transactionHash);
+                //             }
+                //         }
+                //     }
+                // }
             } catch (e) {
                 console.log(e);
             }

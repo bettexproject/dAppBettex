@@ -241,6 +241,16 @@ module.exports = (app) => {
                 }
             }
         },
+        getMatchedUnpaidSubevents: () => {
+            const ret = {};
+            _.forEach(snap.currentState.allBets, bet => {
+                if ((bet.matched > 0) && !bet.paid) {
+                    const eventKey = `${bet.eventid}-${bet.subevent}`;
+                    ret[eventKey] = true;
+                }
+            });
+            return ret;
+        },
         getAccountBalance: (account) => {
             return snap.currentState.balanceOfAccount[account] || 0;
         },
