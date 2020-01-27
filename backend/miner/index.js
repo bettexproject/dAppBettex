@@ -108,46 +108,57 @@ const miner = {
             try {
                 const need2fetch = await miner.app.models.sportr.getUnfetchedProofs();
                 console.log(need2fetch);
-                // if (need2fetch.length > 0) {
-                //     const eventid = need2fetch[0];
-                //     delete(miner.app.models.unpaid.events2fetch[eventid]);
+                if (need2fetch.length > 0) {
+                    const eventid = need2fetch[0];
 
-                //     await miner.app.models.sportr.updateFetchResult(eventid, 'pending');
+                    await miner.app.models.sportr.updateFetchResultId(eventid, 'pending');
 
-                //     const lastEvent = await miner.app.models.sportr.findById(eventid);
-                //     if (lastEvent) {
-                //         const updatedEvent = await findEventIdx(lastEvent);
-                //         if (updatedEvent) {
-                //             const { sportId, countryId, leagueId, matchId, date } = updatedEvent;
-                //             const datesplit = date.split('-');
-                //             console.log(updatedEvent);
-                //             const callData =
-                //                 contract.methods.fetchEventResult(sportId,
-                //                     datesplit[0],
-                //                     datesplit[1],
-                //                     datesplit[2],
-                //                     countryId,
-                //                     leagueId,
-                //                     matchId,
-                //                     config.eventProvableGasAmount).encodeABI();
-                //             console.log(callData);
+                    const lastEvent = await miner.app.models.sportr.findById(eventid);
+                    if (lastEvent) {
+                        const updatedEvent = await findEventIdx(lastEvent);
+                        if (updatedEvent) {
+                            const { sportId, countryId, leagueId, matchId, date } = updatedEvent;
+                            const datesplit = date.split('-');
+                            console.log(updatedEvent);
+                            const callData =
+                                contract.methods.fetchEventResult(sportId,
+                                    datesplit[0],
+                                    datesplit[1],
+                                    datesplit[2],
+                                    countryId,
+                                    leagueId,
+                                    matchId,
+                                    config.eventProvableGasAmount).encodeABI();
+                            console.log(callData);
 
-                //             const nonce = await web3.eth.getTransactionCount(eventAccount.address);
-                //             const tx = await callContract(config.escrowAddress,
-                //                 config.eventProvableContribution,
-                //                 callData,
-                //                 nonce,
-                //                 config.eventGasLimit,
-                //                 Math.round(config.eventGasPrice),
-                //                 config.eventPrivKey)
-                //                 .catch(console.log);
+                            const nonce = await web3.eth.getTransactionCount(eventAccount.address);
+                            const tx = await callContract(config.escrowAddress,
+                                config.eventProvableContribution,
+                                callData,
+                                nonce,
+                                config.eventGasLimit,
+                                Math.round(config.eventGasPrice),
+                                config.eventPrivKey)
+                                .catch(console.log);
 
-                //             if (tx && tx.transactionHash) {
-                //                 await miner.app.models.sportr.updateFetchResult(eventid, tx.transactionHash);
-                //             }
-                //         }
-                //     }
-                // }
+                            if (tx && tx.transactionHash) {
+                                const receipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+                                console.log(receipt);
+                                if (receipt) {
+                                    for (let i = 0; i < receipt.logs.length; i++) {
+                                        const logRecord = receipt.logs[i];
+                                        console.log(logRecord.topics);
+                                        if (logRecord.topics && (logRecord.topics.length > 0) && (logRecord.topics[0] === config.FetchResultActivated)) {
+                                            const reqId = logRecord.data.substr(2, 64);
+                                            await miner.app.models.sportr.updateFetchResultId(eventid, reqId);
+                                            console.log('request id', reqId);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             } catch (e) {
                 console.log(e);
             }

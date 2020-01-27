@@ -24,7 +24,7 @@ module.exports = (app) => {
         date: String,
         sportId: Number,
 
-        fetchTx: String,
+        fetchResultId: String,
     });
 
 
@@ -82,6 +82,14 @@ module.exports = (app) => {
             return Array.isArray(records) ? outputArray : outputArray[0];
         },
 
+        updateFetchResultId: async (external_id, result) => {
+            const record = await sportrModel.findOne({ external_id });
+            if (record) {
+                record.fetchResultId = result;
+                await record.save();
+            }
+        },
+
         getUnfetchedProofs: async () => {
             const matchedUnpaid = app.models.snap.getMatchedUnpaidSubevents();
             const eventsH = {};
@@ -90,7 +98,7 @@ module.exports = (app) => {
             const ret = {};
             for (let i = 0; i < events.length; i++) {
                 const record = await sportrModel.findOne({ external_id: events[i] });
-                if (record && !record.fetchTx) {
+                if (record && !record.fetchResultId) {
                     const extendedRecord = app.models.sportr.extendByStacksAndResults(record);
                     _.forEach(extendedRecord.results, (result, subevent) => {
                         if ((result === true) || (result === false)) {
