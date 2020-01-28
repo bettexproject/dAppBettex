@@ -1,6 +1,6 @@
 const Web3 = require('web3');
 const _ = require('lodash');
-const { uint2bytes32, str2bytes32, callContract } = require('../utils');
+const { uint2bytes32, str2bytes32, callContract, decodeInput } = require('../utils');
 const { findEventIdx } = require('../subeventresults');
 const config = require('../config');
 
@@ -107,7 +107,6 @@ const miner = {
         for (; ;) {
             try {
                 const need2fetch = await miner.app.models.sportr.getUnfetchedProofs();
-                console.log(need2fetch);
                 if (need2fetch.length > 0) {
                     const eventid = need2fetch[0];
 
@@ -137,7 +136,7 @@ const miner = {
                                 callData,
                                 nonce,
                                 config.eventGasLimit,
-                                Math.round(config.eventGasPrice),
+                                Math.round(config.eventGasPriceHi),
                                 config.eventPrivKey)
                                 .catch(console.log);
 
@@ -150,7 +149,7 @@ const miner = {
                                         console.log(logRecord.topics);
                                         if (logRecord.topics && (logRecord.topics.length > 0) && (logRecord.topics[0] === config.FetchResultActivated)) {
                                             const reqId = logRecord.data.substr(2, 64);
-                                            await miner.app.models.sportr.updateFetchResultId(eventid, reqId);
+                                            await miner.app.models.sportr.updateFetchResultId(eventid, reqId, logRecord.blockNumber);
                                             console.log('request id', reqId);
                                         }
                                     }
@@ -165,10 +164,61 @@ const miner = {
             await new Promise(r => setTimeout(r, 10000));
         }
     },
+
+    checkEventProofTx: async (event) => {
+        for (let i = event.fetchResultBlock; i <= await web3.eth.getBlockNumber(); i++) {
+            const blockData = await web3.eth.getBlock(i, true);
+            const txs = (blockData && blockData.transactions) || [];
+            console.log('scanning', i);
+            for (let j = 0; j < txs.length; j++) {
+                const tx = txs[j];
+                if (tx.to && (tx.to.toLowerCase() === config.escrowAddress.toLowerCase())) {
+                    const input = decodeInput(tx.input);
+                    if (input.name === '__callback') {
+                        await miner.app.models.sportr.updateEventResultProof(event.external_id, input.result);
+                        console.log(input);
+                        const callData = contract.methods.parseEventResult(`0x${event.fetchResultId}`, input.result).encodeABI();
+                        console.log(callData);
+                        const nonce = await web3.eth.getTransactionCount(eventAccount.address);
+                        return await callContract(config.escrowAddress,
+                            0,
+                            callData,
+                            nonce,
+                            3000000,
+                            Math.round(config.eventGasPriceLo),
+                            config.eventPrivKey)
+                            .catch(console.log);
+                    }
+                }
+            }
+        }
+    },
+
+
+    parseEventProofs: async () => {
+        for (; ;) {
+            try {
+                const pendingEventProofs = await miner.app.models.sportr.getPendingEventProofs();
+                for (let i = 0; i < pendingEventProofs.length; i++) {
+                    const resId = pendingEventProofs[i].fetchResultId;
+                    if (!resId || (resId.length != 64)) {
+                        continue;
+                    }
+                    const hash = await contract.methods.callbackProofs(`0x${resId}`).call();
+                    if (hash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                        console.log('hash', hash);
+                        await miner.checkEventProofTx(pendingEventProofs[i]);
+                    }
+                }
+            } catch (e) { console.log(e) }
+            await new Promise(r => setTimeout(r, 10000));
+        }
+    },
 };
 
 module.exports = (app) => {
     miner.app = app;
     miner.endlessScan();
     miner.fetchEventProofs();
+    miner.parseEventProofs();
 };

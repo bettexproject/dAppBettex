@@ -25,6 +25,8 @@ module.exports = (app) => {
         sportId: Number,
 
         fetchResultId: String,
+        fetchResultBlock: Number,
+        fetchResultData: String,
     });
 
 
@@ -82,12 +84,26 @@ module.exports = (app) => {
             return Array.isArray(records) ? outputArray : outputArray[0];
         },
 
-        updateFetchResultId: async (external_id, result) => {
+        updateFetchResultId: async (external_id, resultId, resultBlock) => {
             const record = await sportrModel.findOne({ external_id });
             if (record) {
-                record.fetchResultId = result;
+                record.fetchResultId = resultId;
+                record.fetchResultBlock = resultBlock;
+                record.fetchResultData = null;
                 await record.save();
             }
+        },
+
+        updateEventResultProof: async (external_id, result) => {
+            const record = await sportrModel.findOne({ external_id });
+            if (record) {
+                record.fetchResultData = result;
+                await record.save();
+            }
+        },
+
+        getPendingEventProofs: async () => {
+            return await sportrModel.find({ fetchResultId: { $ne: null }, fetchResultData: { $eq: null } });
         },
 
         getUnfetchedProofs: async () => {

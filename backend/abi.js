@@ -1,5 +1,85 @@
 module.exports = [
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "myid",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "string",
+				"name": "result",
+				"type": "string"
+			}
+		],
+		"name": "__callback",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "_myid",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "string",
+				"name": "_result",
+				"type": "string"
+			},
+			{
+				"internalType": "bytes",
+				"name": "_proof",
+				"type": "bytes"
+			}
+		],
+		"name": "__callback",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "eventid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "subevent",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "odds",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "side",
+				"type": "bool"
+			}
+		],
+		"name": "bet",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -135,6 +215,21 @@ module.exports = [
 		"type": "event"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "betid",
+				"type": "uint256"
+			}
+		],
+		"name": "cancel",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -211,6 +306,21 @@ module.exports = [
 		"type": "event"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "deposit",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -274,6 +384,69 @@ module.exports = [
 		"type": "event"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "sportId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "year",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "month",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "day",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "country",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "league",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "matchId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "gasForCb",
+				"type": "uint256"
+			}
+		],
+		"name": "fetchEventResult",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "myid",
+				"type": "bytes32"
+			}
+		],
+		"name": "FetchResultActivated",
+		"type": "event"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -291,6 +464,26 @@ module.exports = [
 		],
 		"name": "OutOfGasWhileReplay",
 		"type": "event"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "myid",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "string",
+				"name": "inp",
+				"type": "string"
+			}
+		],
+		"name": "parseEventResult",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"anonymous": false,
@@ -337,6 +530,41 @@ module.exports = [
 		"type": "event"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "bets",
+				"type": "uint256[]"
+			}
+		],
+		"name": "payouts",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "minGas",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes32[]",
+				"name": "compressedActions",
+				"type": "bytes32[]"
+			}
+		],
+		"name": "playback",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -360,6 +588,21 @@ module.exports = [
 		],
 		"name": "RefundDone",
 		"type": "event"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdraw",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"anonymous": false,
@@ -429,66 +672,6 @@ module.exports = [
 		],
 		"name": "WithdrawPlayed",
 		"type": "event"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "ODDS_PRECISION",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "myid",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "string",
-				"name": "result",
-				"type": "string"
-			}
-		],
-		"name": "__callback",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "_myid",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "string",
-				"name": "_result",
-				"type": "string"
-			},
-			{
-				"internalType": "bytes",
-				"name": "_proof",
-				"type": "bytes"
-			}
-		],
-		"name": "__callback",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
 	},
 	{
 		"constant": true,
@@ -572,53 +755,24 @@ module.exports = [
 		"type": "function"
 	},
 	{
-		"constant": false,
+		"constant": true,
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "eventid",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "subevent",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "odds",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "side",
-				"type": "bool"
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
 			}
 		],
-		"name": "bet",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
+		"name": "callbackProofs",
+		"outputs": [
 			{
-				"internalType": "uint256",
-				"name": "betid",
-				"type": "uint256"
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
 			}
 		],
-		"name": "cancel",
-		"outputs": [],
 		"payable": false,
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -649,21 +803,6 @@ module.exports = [
 		],
 		"payable": false,
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "deposit",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -706,56 +845,6 @@ module.exports = [
 		],
 		"payable": false,
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "sportId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "year",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "month",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "day",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "country",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "league",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "matchId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "gasForCb",
-				"type": "uint256"
-			}
-		],
-		"name": "fetchEventResult",
-		"outputs": [],
-		"payable": true,
-		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -826,53 +915,18 @@ module.exports = [
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"internalType": "bytes",
-				"name": "input",
-				"type": "bytes"
-			}
-		],
-		"name": "parseEventResult",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "bets",
-				"type": "uint256[]"
-			}
-		],
-		"name": "payouts",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
+		"constant": true,
+		"inputs": [],
+		"name": "ODDS_PRECISION",
+		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "minGas",
+				"name": "",
 				"type": "uint256"
-			},
-			{
-				"internalType": "bytes32[]",
-				"name": "compressedActions",
-				"type": "bytes32[]"
 			}
 		],
-		"name": "playback",
-		"outputs": [],
 		"payable": false,
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -892,27 +946,7 @@ module.exports = [
 				"type": "bytes32"
 			}
 		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"name": "provenByAddress",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
+		
 		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
@@ -951,21 +985,6 @@ module.exports = [
 		],
 		"payable": false,
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "withdraw",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ];

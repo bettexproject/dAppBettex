@@ -20,13 +20,13 @@ contract BettexEth is usingProvable {
     
     /* event results */
     event FetchEventNeedGas(uint needGas);
-    
-    mapping (bytes32 => address) public provenByAddress;    
-    
+    event FetchResultActivated(bytes32 myid);
+
+    mapping (bytes32 => bytes32) public callbackProofs;
+
     function __callback(bytes32 myid, string memory result) public {
-        myid;
-        bytes32 hash = keccak256(abi.encodePacked(result));
-        provenByAddress[hash] = msg.sender;
+        require(msg.sender == provable_cbAddress());
+        callbackProofs[myid] = keccak256(abi.encodePacked(result));
     }
     
     function fetchEventResult (uint sportId, uint year, uint month, uint day, uint country, uint league, uint matchId, uint gasForCb) public payable {
@@ -53,7 +53,8 @@ contract BettexEth is usingProvable {
                 "]"
             );
             
-            provable_query("URL", string(url), gasForCb);
+            bytes32 myid = provable_query("URL", string(url), gasForCb);
+            emit FetchResultActivated(myid);
             msg.sender.transfer(msg.value - gasForProvable);
         }
     }
@@ -67,6 +68,9 @@ contract BettexEth is usingProvable {
     }
     
     function bytesSlice(bytes memory s, uint start, uint end) internal pure returns (bytes memory) {
+        if (end <= start) {
+            return "";
+        }
         bytes memory retval = new bytes(end - start);
         for (uint i = start; i < end; i++) {
             retval[i - start] = s[i];
@@ -92,7 +96,10 @@ contract BettexEth is usingProvable {
     uint64 constant subevent_t2 = 2;
     uint64 constant subevent_draw = 3;
     
-    function parseEventResult(bytes memory input) public {
+    function parseEventResult(bytes32 myid, string memory inp) public {
+        bytes memory input = bytes(inp);
+        require(callbackProofs[myid] == keccak256(abi.encodePacked(input)), "data mismatch");
+        
         uint64 eventid = 0;
         uint statusid = 0;
         uint periods_ft_home = 0;
@@ -101,7 +108,7 @@ contract BettexEth is usingProvable {
         uint state = STATE_VALUE;
         uint depth = 0;
         uint stringStart;
-        bytes32[] memory path = new bytes32[](5);
+        bytes32[] memory path = new bytes32[](10);
 
         for (uint p = 0; p < input.length; p++) {
             byte c = input[p];
@@ -540,7 +547,7 @@ contract BettexEth is usingProvable {
                             currentHash = keccak256(abi.encodePacked(currentHash, cancelHash(account, betid)));
                         }
                     }
-
+                    
                     if (action == bytes32("payouts")) {
                         uint betlen = uint256(compressedActions[pos++]);
                         uint[] memory bets = new uint[](betlen);
@@ -551,7 +558,7 @@ contract BettexEth is usingProvable {
                         }
                     }
                 }
-                if (commit) {
+                if (commit) { 
                     startCommitWith = 0;
                     lastBlock = blocknumber;
                 } else {
