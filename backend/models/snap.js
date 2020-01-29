@@ -202,6 +202,7 @@ module.exports = (app) => {
             }
             return savedState;
         },
+        
         lastConfirmedState: async () => {
             const currentHeight = app.currentHeight || 0;
             const lastConfirmedRecord = await snapModel.find({

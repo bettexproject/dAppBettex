@@ -106,6 +106,7 @@ const miner = {
     fetchEventProofs: async () => {
         for (; ;) {
             try {
+                // do oraclize requests
                 const need2fetch = await miner.app.models.sportr.getUnfetchedProofs();
                 if (need2fetch.length > 0) {
                     const eventid = need2fetch[0];
@@ -158,9 +159,21 @@ const miner = {
                         }
                     }
                 }
-            } catch (e) {
-                console.log(e);
-            }
+
+                // parse oraclize responses
+                const pendingEventProofs = await miner.app.models.sportr.getPendingEventProofs();
+                for (let i = 0; i < pendingEventProofs.length; i++) {
+                    const resId = pendingEventProofs[i].fetchResultId;
+                    if (!resId || (resId.length != 64)) {
+                        continue;
+                    }
+                    const hash = await contract.methods.callbackProofs(`0x${resId}`).call();
+                    if (hash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                        console.log('hash', hash);
+                        await miner.checkEventProofTx(pendingEventProofs[i]);
+                    }
+                }
+            } catch (e) { console.log(e) }
             await new Promise(r => setTimeout(r, 10000));
         }
     },
@@ -174,7 +187,7 @@ const miner = {
                 const tx = txs[j];
                 if (tx.to && (tx.to.toLowerCase() === config.escrowAddress.toLowerCase())) {
                     const input = decodeInput(tx.input);
-                    if (input.name === '__callback') {
+                    if ((input.name === '__callback') && (input.myid === `0x${event.fetchResultId}`)) {
                         await miner.app.models.sportr.updateEventResultProof(event.external_id, input.result);
                         console.log(input);
                         const callData = contract.methods.parseEventResult(`0x${event.fetchResultId}`, input.result).encodeABI();
@@ -191,27 +204,6 @@ const miner = {
                     }
                 }
             }
-        }
-    },
-
-
-    parseEventProofs: async () => {
-        for (; ;) {
-            try {
-                const pendingEventProofs = await miner.app.models.sportr.getPendingEventProofs();
-                for (let i = 0; i < pendingEventProofs.length; i++) {
-                    const resId = pendingEventProofs[i].fetchResultId;
-                    if (!resId || (resId.length != 64)) {
-                        continue;
-                    }
-                    const hash = await contract.methods.callbackProofs(`0x${resId}`).call();
-                    if (hash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                        console.log('hash', hash);
-                        await miner.checkEventProofTx(pendingEventProofs[i]);
-                    }
-                }
-            } catch (e) { console.log(e) }
-            await new Promise(r => setTimeout(r, 10000));
         }
     },
 
@@ -242,6 +234,5 @@ module.exports = (app) => {
     miner.app = app;
     miner.endlessScan();
     miner.fetchEventProofs();
-    miner.parseEventProofs();
     miner.initPayoutBets();
 };
