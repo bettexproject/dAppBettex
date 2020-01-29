@@ -90,11 +90,13 @@ contract BettexEth is usingProvable {
     uint constant STATE_LIST = 1;
     uint constant STATE_KEY = 2;
     uint constant STATE_STRINGVALUE = 3;
-    uint constant STATE_INTVALUE = 4;
+    uint constant STATE_ORDVALUE = 4;
     
     uint64 constant subevent_t1 = 1;
     uint64 constant subevent_t2 = 2;
     uint64 constant subevent_draw = 3;
+    
+    event IntVal(string, uint);
     
     function parseEventResult(bytes32 myid, string memory inp) public {
         bytes memory input = bytes(inp);
@@ -112,10 +114,15 @@ contract BettexEth is usingProvable {
 
         for (uint p = 0; p < input.length; p++) {
             byte c = input[p];
-            if (state == STATE_INTVALUE) {
-                if ((c < "0") || (c > "9")) {
+            require(depth >= 0, "depth underflow");
+            require(depth < 10, "depth overflow");
+            if (state == STATE_ORDVALUE) {
+                if ((c == " ") || (c == ":")) {
+                    continue;
+                }
+                if ((c == ",")||(c == "}")) {
                     // react to int values by some paths
-                    
+                    emit IntVal(string(bytesSlice(input, stringStart, p)), bytes2uint(input, stringStart, p));
                     // _id
                     if (path[1] == keccak_id) {
                         eventid = bytes2uint(input, stringStart, p);
@@ -133,6 +140,9 @@ contract BettexEth is usingProvable {
                         }
                     }
                     state = STATE_LIST;
+                    if (c== "}") {
+                        depth--;
+                    }
                     continue;
                 }
             }
@@ -147,9 +157,9 @@ contract BettexEth is usingProvable {
                     stringStart = p + 1;
                     continue;
                 }
-                if ((c >= "0") && (c <= "9")) {
+                if ((c != ":") && (c != " ") && (c != "\"")) {
                     stringStart = p;
-                    state = STATE_INTVALUE;
+                    state = STATE_ORDVALUE;
                     continue;
                 }
             }
@@ -168,6 +178,7 @@ contract BettexEth is usingProvable {
                 }
                 if (c == "}") {
                     depth--;
+                    continue;
                 }
             }
             if (state == STATE_KEY) {
@@ -194,7 +205,7 @@ contract BettexEth is usingProvable {
         eventStatus[getEventHash(eventid, subevent)] = isForWon ? 1 : 2;
     }
     
-    function getEventStatus(uint64 eventid, uint64 subevent) internal view returns (uint) {
+    function getEventStatus(uint64 eventid, uint64 subevent) public view returns (uint) {
         return eventStatus[getEventHash(eventid, subevent)];
     }
     

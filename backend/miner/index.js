@@ -214,6 +214,28 @@ const miner = {
             await new Promise(r => setTimeout(r, 10000));
         }
     },
+
+    initPayoutBets: async () => {
+        for (; ;) {
+            try {
+                const unpaidBets = miner.app.models.snap.getUnpaidBets();
+                const unpaidEvents = {};
+                _.forEach(unpaidBets, bet => {
+                    const eventKey = `${bet.eventid}-${bet.subevent}`;
+                    unpaidEvents[eventKey] = true;
+                });
+                const unpaidEventsK = _.keys(unpaidEvents);
+                for (let i = 0; i < unpaidEventsK.length; i++) {
+                    const s = unpaidEventsK[i].split('-');
+                    const status = await contract.methods.getEventStatus(s[0], s[1]).call();
+                    console.log(s, status);
+                }
+            } catch (e) {
+                console.log(e);
+            }
+            await new Promise(r => setTimeout(r, 10000));
+        }
+    },
 };
 
 module.exports = (app) => {
@@ -221,4 +243,5 @@ module.exports = (app) => {
     miner.endlessScan();
     miner.fetchEventProofs();
     miner.parseEventProofs();
+    miner.initPayoutBets();
 };

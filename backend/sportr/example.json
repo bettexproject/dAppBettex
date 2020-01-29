@@ -1,0 +1,22 @@
+console.log(JSON.stringify({
+    "status": {
+        "_doc": "status",
+        "name": "Ended",
+        "_id": 100
+    },
+    "windadvantage": 0,
+    "tobeannounced": false,
+    "_seasonid": 66881,
+    "_rcid": 7,
+    "_sid": 1,
+    "overtimelength": 15,
+    "weather": null,
+    "result": {
+        "home": 0,
+        "away": 2,
+        "winner": "away"
+    },
+    "_id": 18440334,
+    "round": 21,
+    "wind": null
+}));

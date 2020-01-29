@@ -126,6 +126,7 @@ module.exports = (app) => {
                         amount: parseInt(input.amount),
                         odds: parseInt(input.odds),
                         side: input.side,
+                        blockNumber: tx.blockNumber,
                         matched: 0,
                         matched_peer: 0,
                         cancelled: 0,
@@ -251,6 +252,11 @@ module.exports = (app) => {
             });
             return ret;
         },
+
+        getUnpaidBets: () => {
+            return _.filter(snap.currentState.allBets, bet => !bet.paid && bet.blockNumber > 0);
+        },
+
         getAccountBalance: (account) => {
             return snap.currentState.balanceOfAccount[account] || 0;
         },
