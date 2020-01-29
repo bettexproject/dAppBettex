@@ -95,6 +95,12 @@ const miner = {
                         compressedData.push(`0x${chainItem.data.substr(j, 64)}`);
                     }
                 }
+                if (chainItem.type === 'payouts') {
+                    compressedData.push(`0x${str2bytes32(chainItem.type)}`);
+                    for (let j = 2 + 64*2; j < chainItem.data.length; j += 64) {
+                        compressedData.push(`0x${chainItem.data.substr(j, 64)}`);
+                    }
+                }
             });
         });
 
@@ -173,7 +179,42 @@ const miner = {
                         await miner.checkEventProofTx(pendingEventProofs[i]);
                     }
                 }
-            } catch (e) { console.log(e) }
+
+                // payout bets
+                const betsQueue = [];
+                const unpaidBets = miner.app.models.snap.getUnpaidBets();
+                const unpaidEvents = {};
+                _.forEach(unpaidBets, bet => {
+                    const eventKey = `${bet.eventid}-${bet.subevent}`;
+                    unpaidEvents[eventKey] = true;
+                });
+                const unpaidEventsK = _.keys(unpaidEvents);
+                for (let i = 0; i < unpaidEventsK.length; i++) {
+                    const s = unpaidEventsK[i].split('-');
+                    const status = await contract.methods.getEventStatus(s[0], s[1]).call();
+                    console.log(s, status);
+                    if (status > 0) {
+                        _.forEach(miner.app.models.snap.getUnpaidBets(parseInt(s[0]), parseInt(s[1])),
+                            bet => betsQueue.push(bet.betid));
+                    }
+                }
+                if (betsQueue.length > 0) {
+                    console.log(betsQueue);
+                    const callData = contract.methods.payouts(betsQueue).encodeABI();
+                    console.log(callData);
+                    const nonce = await web3.eth.getTransactionCount(eventAccount.address);
+                    await callContract(config.escrowAddress,
+                        0,
+                        callData,
+                        nonce,
+                        3000000,
+                        Math.round(config.eventGasPriceLo),
+                        config.eventPrivKey)
+                        .catch(console.log);
+                }
+            } catch (e) {
+                console.log(e);
+            }
             await new Promise(r => setTimeout(r, 10000));
         }
     },
@@ -207,32 +248,10 @@ const miner = {
         }
     },
 
-    initPayoutBets: async () => {
-        for (; ;) {
-            try {
-                const unpaidBets = miner.app.models.snap.getUnpaidBets();
-                const unpaidEvents = {};
-                _.forEach(unpaidBets, bet => {
-                    const eventKey = `${bet.eventid}-${bet.subevent}`;
-                    unpaidEvents[eventKey] = true;
-                });
-                const unpaidEventsK = _.keys(unpaidEvents);
-                for (let i = 0; i < unpaidEventsK.length; i++) {
-                    const s = unpaidEventsK[i].split('-');
-                    const status = await contract.methods.getEventStatus(s[0], s[1]).call();
-                    console.log(s, status);
-                }
-            } catch (e) {
-                console.log(e);
-            }
-            await new Promise(r => setTimeout(r, 10000));
-        }
-    },
 };
 
 module.exports = (app) => {
     miner.app = app;
     miner.endlessScan();
     miner.fetchEventProofs();
-    miner.initPayoutBets();
 };

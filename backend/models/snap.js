@@ -112,6 +112,11 @@ module.exports = (app) => {
         },
         replayTx: (state, tx) => {
             const input = tx.input ? decodeInput(tx.input) : {};
+            if (input.name === 'payouts') {
+                for (let i = 0; i < input.bets.length; i++) {
+                    state.allBets[input.bets[i] - 1].paid = true;
+                }
+            }
             if (input.name === 'deposit') {
                 state.balanceOfAccount[tx.account] = (state.balanceOfAccount[tx.account] || 0) + parseInt(input.amount);
             }
@@ -202,7 +207,7 @@ module.exports = (app) => {
             }
             return savedState;
         },
-        
+
         lastConfirmedState: async () => {
             const currentHeight = app.currentHeight || 0;
             const lastConfirmedRecord = await snapModel.find({
@@ -254,8 +259,11 @@ module.exports = (app) => {
             return ret;
         },
 
-        getUnpaidBets: () => {
-            return _.filter(snap.currentState.allBets, bet => !bet.paid && bet.blockNumber > 0);
+        getUnpaidBets: (eventid, subevent) => {
+            return _.filter(snap.currentState.allBets, bet => !bet.paid && (bet.blockNumber > 0)
+                && (!eventid || (eventid === bet.eventid))
+                && (!subevent || (subevent === bet.subevent))
+                )
         },
 
         getAccountBalance: (account) => {
