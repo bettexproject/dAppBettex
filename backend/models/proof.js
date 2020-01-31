@@ -10,13 +10,12 @@ module.exports = (app) => {
             unique: true,
         },
         account: String,
-        data: String,
         input: String,
     });
     proofSchema.index({ account: 1 });
     const proofModel = app.mongoose.model('proof', proofSchema);
 
-    app.models.proofEvent = {
+    app.models.proof = {
         add: async (params) => {
             const record = await proofModel.findOne({ hash: params.hash });
             if (record && record.blockNumber) {
@@ -41,8 +40,8 @@ module.exports = (app) => {
             await app.models.snap.update();
             return r;
         },
-        getUnmined: async (blocksFrom, blocksUntil) => {
-            return await proofModel.find({ blockNumber: { $gt: blocksFrom, $lt: blocksUntil } }, {}, { sort: { blockNumber: 1, index: 1 } });
+        getLastTx: async (scanFrom) => {
+            return await proofModel.find({ $or: [{ blockNumber: { $eq: 0 } }, { blockNumber: { $gt: scanFrom } }] }, {}, { sort: { blockNumber: 1, index: 1 } });
         },
         txsFrom: async (blocksFrom) => {
             const txs = await proofModel.find({ $or: [{ blockNumber: { $gt: blocksFrom } }, { blockNumber: { $eq: 0 } }] }, {}, { sort: { blockNumber: 1, index: 1 } });
@@ -53,9 +52,6 @@ module.exports = (app) => {
             txs.forEach(tx => (tx.blockNumber !== 0) && resultTxs.push(tx));
             txs.forEach(tx => (tx.blockNumber === 0) && resultTxs.push(tx));
             return resultTxs;
-        },
-        getLastTx: async (scanFrom) => {
-            return await proofModel.find({ $or: [{ blockNumber: { $eq: 0 } }, { blockNumber: { $gt: scanFrom } }] }, {}, { sort: { blockNumber: 1, index: 1 } });
         },
     };
 };

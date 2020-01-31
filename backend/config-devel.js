@@ -1,9 +1,9 @@
-const escrowAddress = '0xF35a700b32e55C7E3fDCC7f850a54A454b0Ef576';
+const escrowAddress = '0xf606f4e1dC1896ab844290bb8Fff7872366f6dE7';
 
 module.exports = {
     web3URL: 'https://ropsten.infura.io/v3/177808a3ebca4e57b5847081b0b22ced',
     web3wss: 'wss://ropsten.infura.io/ws/v3/177808a3ebca4e57b5847081b0b22ced',
-    escrowAddress,
+    escrowAddress: escrowAddress.toLowerCase(),
     mongo: `mongodb://mongo/scanner-devel-${escrowAddress}`,
     minerPrivKey: '0x382F1BAE9F593B5C6A6DB515D7173F7E2BEA50C95931F8D36300DBF57707E0D0',
     minerGasPrice: 1*10**9,

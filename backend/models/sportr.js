@@ -1,5 +1,6 @@
 const _ = require('lodash');
-const { getEventResultsFromPlane } = require('../subeventresults');
+const { getEventResultsFromStruct } = require('../subeventresults');
+const { subeventsReverse } = require('../subevents');
 
 module.exports = (app) => {
     const sportrSchema = new app.mongoose.Schema({
@@ -20,6 +21,7 @@ module.exports = (app) => {
         ended: Number,
 
         teams: String,
+        results: String,
 
         date: String,
         sportId: Number,
@@ -62,6 +64,11 @@ module.exports = (app) => {
             record.sportId = params.sportId;
 
             record.teams = JSON.stringify(params.teams);
+            record.results = JSON.stringify(getEventResultsFromStruct(params));
+
+            _.forEach(params.results, (result, memo) =>
+                app.models.snap.updateResultByEvent(record.external_id, subeventsReverse[memo], result));
+
 
             await record.save();
             app.models.sportr.notifyChange(record);
@@ -77,7 +84,7 @@ module.exports = (app) => {
                     ...r,
                     teams: r.teams ? JSON.parse(r.teams) : null,
                     stacks: app.models.snap.getEventStacks(r.external_id),
-                    results: getEventResultsFromPlane(r),
+                    results: r.results ? JSON.parse(r.results) : null,
                 } : {};
             });
 

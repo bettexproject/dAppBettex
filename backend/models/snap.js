@@ -50,6 +50,25 @@ const aggregateStacks = (stacks, allBets) => {
     }
 };
 
+// copy-paste from solidity. replace bet.owner => bet.account
+const payoutBet = (bet, userBalances) => {
+    const amount = bet.amount - bet.cancelled + bet.matched_peer;
+    userBalances[bet.account] += amount;
+    bet.cancelled = bet.amount - bet.matched - bet.cancelled;
+};
+
+const paycancel = (bet, userBalances) => {
+    const amount = bet.amount - bet.matched - bet.cancelled;
+    userBalances[bet.account] += amount;
+    bet.cancelled += amount;
+};
+
+const payrefund = (bet, userBalances) => {
+    const amount = bet.amount - bet.cancelled;
+    userBalances[bet.account] += amount;
+    bet.cancelled = bet.amount - bet.matched - bet.cancelled;
+};
+
 module.exports = (app) => {
     const snapSchema = new app.mongoose.Schema({
         blockNumber: Number,
@@ -114,7 +133,28 @@ module.exports = (app) => {
             const input = tx.input ? decodeInput(tx.input) : {};
             if (input.name === 'payouts') {
                 for (let i = 0; i < input.bets.length; i++) {
-                    state.allBets[input.bets[i] - 1].paid = true;
+                    const bet = state.allBets[input.bets[i] - 1];
+                    if (!bet.paid) {
+                        const eventKey = `${bet.eventid}-${bet.subevent}`;
+                        const betResult = state.resultByEvents[eventKey];
+                        if ((betResult === 1) && (bet.side === true)) {
+                            payoutBet(bet, state.balanceOfAccount);
+                        }
+                        if ((betResult === 1) && (bet.side === false)) {
+                            paycancel(bet, state.balanceOfAccount);
+                        }
+                        if ((betResult === 2) && (bet.side === false)) {
+                            payoutBet(bet, state.balanceOfAccount);
+                        }
+                        if ((betResult === 2) && (bet.side === true)) {
+                            paycancel(bet, state.balanceOfAccount);
+                        }
+                        if (betResult == 3) {
+                            payrefund(betid, state.balanceOfAccount);
+                        }
+                        bet.paid = true;
+                        console.log(bet);
+                    }
                 }
             }
             if (input.name === 'deposit') {
@@ -194,14 +234,15 @@ module.exports = (app) => {
                 eventStacks: {},
                 allBets: [],
                 betsByEvents: {},
+                resultByEvents: {},
             };
-            const additionalTxs = await app.models.proofEvent.txsFrom(stateRecord ? stateRecord.blockNumber : 1);
+            const additionalTxs = await app.models.proof.txsFrom(stateRecord ? stateRecord.blockNumber : 1);
             let prevBlock = null;
             for (let i = 0; i < additionalTxs.length; i++) {
                 const tx = additionalTxs[i];
-                if (prevBlock && (tx.blockNumber > prevBlock) && (tx.blockNumber > 0) && (tx.blockNumber < app.currentHeight - config.rescanDepth)) {
+                // if (prevBlock && (tx.blockNumber > prevBlock) && (tx.blockNumber > 0) && (tx.blockNumber < app.currentHeight - config.rescanDepth)) {
                     // await snapModel.create({ blockNumber: prevBlock, state: JSON.stringify(savedState) });
-                }
+                // }
                 prevBlock = tx.blockNumber;
                 snap.replayTx(savedState, tx);
             }
@@ -219,6 +260,10 @@ module.exports = (app) => {
             });
             const fromBlock = (lastConfirmedRecord && lastConfirmedRecord.length) ? lastConfirmedRecord[0].blockNumber : 0;
             return await snap.replay(fromBlock);
+        },
+        updateResultByEvent: (eventid, subevent, result) => {
+            const eventKey = `${eventid}-${subevent}`;
+            snap.currentState.resultByEvents[eventKey] = result;
         },
         update: async () => {
             const prevBalances = _.clone(snap.currentState.balanceOfAccount || {});
@@ -263,7 +308,7 @@ module.exports = (app) => {
             return _.filter(snap.currentState.allBets, bet => !bet.paid && (bet.blockNumber > 0)
                 && (!eventid || (eventid === bet.eventid))
                 && (!subevent || (subevent === bet.subevent))
-                )
+            )
         },
 
         getAccountBalance: (account) => {
