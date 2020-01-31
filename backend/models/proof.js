@@ -11,6 +11,10 @@ module.exports = (app) => {
         },
         account: String,
         input: String,
+        state: {
+            type: Boolean,
+            default: true,
+        },
     });
     proofSchema.index({ account: 1 });
     const proofModel = app.mongoose.model('proof', proofSchema);
@@ -36,15 +40,20 @@ module.exports = (app) => {
         // transaction failed or dismissed by network fork
         dismiss: async (txHash) => {
             const r = await proofModel.findOne({ hash: txHash });
-            await proofModel.deleteOne({ hash: txHash });
+            r.state = false;
+            await r.save();
             await app.models.snap.update();
             return r;
         },
         getLastTx: async (scanFrom) => {
-            return await proofModel.find({ $or: [{ blockNumber: { $eq: 0 } }, { blockNumber: { $gt: scanFrom } }] }, {}, { sort: { blockNumber: 1, index: 1 } });
+            return await proofModel.find({ $and: [{ state: true }, { $or: [{ blockNumber: { $eq: 0 } }, { blockNumber: { $gt: scanFrom } }] }] },
+                {}, { sort: { blockNumber: 1, index: 1 } });
         },
         txsFrom: async (blocksFrom) => {
-            const txs = await proofModel.find({ $or: [{ blockNumber: { $gt: blocksFrom } }, { blockNumber: { $eq: 0 } }] }, {}, { sort: { blockNumber: 1, index: 1 } });
+            const txs = await proofModel.find(
+                {
+                    $and: [{ state: true }, { $or: [{ blockNumber: { $gt: blocksFrom } }, { blockNumber: { $eq: 0 } }] }]
+                }, {}, { sort: { blockNumber: 1, index: 1 } });
             if (!txs) {
                 return txs;
             }
