@@ -22,7 +22,7 @@ module.exports = (app) => {
     app.models.proof = {
         add: async (params) => {
             const record = await proofModel.findOne({ hash: params.hash });
-            if (record && record.blockNumber) {
+            if (record && (record.blockNumber === params.blockNumber)) {
                 return null;
             }
             if (!record) {
@@ -30,8 +30,12 @@ module.exports = (app) => {
                 const r = await proofModel.create(params);
                 await app.models.snap.update();
                 return r;
-            } else {
-                console.log('updating from utx to confirmed');
+            } else  {
+                if (!record.blockNumber) {
+                    console.log('updating from utx to confirmed');
+                } else {
+                    console.log('changed block number');
+                }
                 record.set(params);
                 await record.save();
                 await app.models.snap.update();
