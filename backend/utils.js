@@ -21,6 +21,11 @@ module.exports = {
         return ret;
     },
 
+    address2bytes32: (address) => {
+        const unpadded = address.substr(2);
+        return `${'0000000000000000000000000000000000000000000000000000000000000000'.substr(0, 64 - unpadded.length)}${unpadded}`;
+    },
+
     callContract: async (address, value, data, nonce, gas, gasPrice, pk) => {
         const signedTx = await web3.eth.accounts.signTransaction({
             to: address,

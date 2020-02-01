@@ -1,4 +1,4 @@
-const escrowAddress = '0xf606f4e1dC1896ab844290bb8Fff7872366f6dE7';
+const escrowAddress = '0x12f4de2ade4EFE2Ca3c6b06540743142d74Fa92F';
 
 module.exports = {
     web3URL: 'https://ropsten.infura.io/v3/177808a3ebca4e57b5847081b0b22ced',
@@ -7,6 +7,8 @@ module.exports = {
     mongo: `mongodb://mongo/scanner-devel-${escrowAddress}`,
     minerPrivKey: '0x382F1BAE9F593B5C6A6DB515D7173F7E2BEA50C95931F8D36300DBF57707E0D0',
     minerGasPrice: 1*10**9,
+    minerGasLimit: 3000000,
+    minerGasMin: 1000000,
     eventPrivKey: '0x96A29664E06C4B7B1D3D9E027620B4490B692A245804C4D2B9BF62B8D2D41587',
     eventGasPriceHi: 2*10**9,
     eventGasPriceLo: 1*10**9,

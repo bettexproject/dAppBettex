@@ -1,4 +1,5 @@
 const { decodeInput } = require('../utils');
+const config = require('../config');
 
 module.exports = (app) => {
     const proofSchema = new app.mongoose.Schema({
@@ -15,6 +16,7 @@ module.exports = (app) => {
             type: Boolean,
             default: true,
         },
+        minedAt: Number,
     });
     proofSchema.index({ account: 1 });
     const proofModel = app.mongoose.model('proof', proofSchema);
@@ -30,7 +32,7 @@ module.exports = (app) => {
                 const r = await proofModel.create(params);
                 await app.models.snap.update();
                 return r;
-            } else  {
+            } else {
                 if (!record.blockNumber) {
                     console.log('updating from utx to confirmed');
                 } else {
@@ -65,6 +67,30 @@ module.exports = (app) => {
             txs.forEach(tx => (tx.blockNumber !== 0) && resultTxs.push(tx));
             txs.forEach(tx => (tx.blockNumber === 0) && resultTxs.push(tx));
             return resultTxs;
+        },
+        getByCheckpoints: async () => {
+            const checkpoints = [];
+            const fixed = await proofModel.find({ blockNumber: { $ne: 0 }, state: true }, {}, { sort: { blockNumber: 1, index: 1 } });
+            let len = 0;
+            let slice = [];
+            for (let i = 0; i < fixed.length; i++) {
+                const proof = fixed[i];
+                len += config.proofMethods[proof.type].len;
+                if (len > 255) {
+                    checkpoints.push(slice);
+                    len = config.proofMethods[proof.type].len;
+                    slice = [proof];
+                } else if (config.proofMethods[proof.type].force) {
+                    slice.push(proof);
+                    checkpoints.push(slice);
+                    slice = [];
+                    len = 0;
+                } else {
+                    slice.push(proof);
+                }
+            }
+            checkpoints.push(slice);
+            return checkpoints;
         },
     };
 };

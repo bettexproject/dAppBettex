@@ -335,4 +335,5 @@ module.exports = (app) => {
     };
 
     app.models.snap = snap;
+    snap.update();
 };
