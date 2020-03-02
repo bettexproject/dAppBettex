@@ -21,6 +21,13 @@ module.exports = {
         return ret;
     },
 
+    string2bytes32: (str, out) => {
+        out.push(`0x${module.exports.uint2bytes32(str.length)}`);
+        for (let i = 0; i < str.length; i += 32) {
+            out.push(`0x${module.exports.str2bytes32(str.substr(i, 32))}`);
+        }
+    },
+
     address2bytes32: (address) => {
         const unpadded = address.substr(2);
         return `${'0000000000000000000000000000000000000000000000000000000000000000'.substr(0, 64 - unpadded.length)}${unpadded}`;
@@ -44,7 +51,7 @@ module.exports = {
             const abiSig = web3.eth.abi.encodeFunctionSignature(config.abi[i]);
             if (abiSig === funcSig) {
                 const parameters = str.substr(10);
-                return { name: config.abi[i].name, ...web3.eth.abi.decodeParameters(config.abi[i].inputs, parameters)};
+                return { name: config.abi[i].name, ...web3.eth.abi.decodeParameters(config.abi[i].inputs, parameters) };
             }
         }
         return null;

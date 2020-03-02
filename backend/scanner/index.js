@@ -3,7 +3,7 @@ const _ = require('lodash');
 const { decodeInput } = require('../utils');
 const config = require('../config');
 
-const web3 = new Web3(config.web3URL);
+const web3 = new Web3(new Web3.providers.HttpProvider(config.web3URL));
 const web3wss = new Web3(config.web3wss);
 const contract = new web3.eth.Contract(config.abi, config.escrowAddress);
 
@@ -98,6 +98,6 @@ module.exports = (app) => {
 
     app.scanner = scanner;
     scanner.endlessScan();
-    scanner.pendingScanner();
+    // scanner.pendingScanner();
     scanner.recheckLastTx();
 };

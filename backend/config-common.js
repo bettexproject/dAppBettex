@@ -11,10 +11,11 @@ module.exports = {
     },
 
     proofMethods: {
-        bet: { len: 2, force: false },
-        deposit: { len: 1, force: false },
-        cancel: { len: 1, force: false },
-        withdraw: { len: 2, force: true },
+        bet: { len: 20, force: false },
+        deposit: { len: 8, force: false },
+        cancel: { len: 8, force: false },
+        withdraw: { len: 8, force: true },
+        __callback: { len: 230, force: true },
     },
 
     FetchResultActivated: '0x36323d6466ffb8bdfde5e5e719ee14d5afff4fdda2ade0c3a1cbd80109ac9b48',

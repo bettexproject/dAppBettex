@@ -1,10 +1,250 @@
 pragma solidity ^0.5;
+import "github.com/provable-things/ethereum-api/provableAPI_0.5.sol";
 
-contract Bettex {
+
+contract Bettex is usingProvable {
     
     uint constant public ODDS_PRECISION = 100;
+    bytes32 constant keccak_id = keccak256(abi.encodePacked("_id"));
+    bytes32 constant keccak_status = keccak256(abi.encodePacked("status"));
+    bytes32 constant keccak_periods = keccak256(abi.encodePacked("periods"));
+    bytes32 constant keccak_ft = keccak256(abi.encodePacked("ft"));
+    bytes32 constant keccak_home = keccak256(abi.encodePacked("home"));
+    bytes32 constant keccak_away = keccak256(abi.encodePacked("away"));
+
+    uint constant STATE_VALUE = 0;
+    uint constant STATE_LIST = 1;
+    uint constant STATE_KEY = 2;
+    uint constant STATE_STRINGVALUE = 3;
+    uint constant STATE_ORDVALUE = 4;
+    
+    uint64 constant subevent_t1 = 1;
+    uint64 constant subevent_t2 = 2;
+    uint64 constant subevent_draw = 3;
     
     uint public firstBlock = block.number;
+    
+    mapping (bytes32 => bytes32) public callbackProofs;
+
+    function parseEventResult(bytes32 myid, string memory inp) public {
+        bytes memory input = bytes(inp);
+        require(callbackProofs[myid] == keccak256(abi.encodePacked(input)), "data mismatch");
+        
+        uint64 eventid = 0;
+        uint statusid = 0;
+        uint periods_ft_home = 0;
+        uint periods_ft_away = 0;
+
+        uint state = STATE_VALUE;
+        uint depth = 0;
+        uint stringStart;
+        bytes32[] memory path = new bytes32[](10);
+
+        for (uint p = 0; p < input.length; p++) {
+            byte c = input[p];
+            require(depth >= 0, "depth underflow");
+            require(depth < 10, "depth overflow");
+            if (state == STATE_ORDVALUE) {
+                if ((c == " ") || (c == ":")) {
+                    continue;
+                }
+                if ((c == ",")||(c == "}")) {
+                    // react to int values by some paths
+                    // _id
+                    if (path[1] == keccak_id) {
+                        eventid = bytes2uint(input, stringStart, p);
+                    }
+                    // status._id
+                    else if ((depth == 2) && (path[1] == keccak_status) && (path[2] == keccak_id)) {
+                        statusid = bytes2uint(input, stringStart, p);
+                    } else if ((depth == 3) && (path[1] == keccak_periods) && (path[2] == keccak_ft)) {
+                        if (path[3] == keccak_home) {
+                            // periods.ft.home
+                            periods_ft_home = bytes2uint(input, stringStart, p);
+                        } else if (path[3] == keccak_away) {
+                            // periods.ft.away
+                            periods_ft_away = bytes2uint(input, stringStart, p);
+                        }
+                    }
+                    state = STATE_LIST;
+                    if (c== "}") {
+                        depth--;
+                    }
+                    continue;
+                }
+            }
+            if (state == STATE_VALUE) {
+                if (c == "{") {
+                    state = STATE_LIST;
+                    depth++;
+                    continue;
+                }
+                if (c == "\"") {
+                    state = STATE_STRINGVALUE;
+                    stringStart = p + 1;
+                    continue;
+                }
+                if ((c != ":") && (c != " ") && (c != "\"")) {
+                    stringStart = p;
+                    state = STATE_ORDVALUE;
+                    continue;
+                }
+            }
+            if (state == STATE_STRINGVALUE) {
+                if (c == "\"") {
+                    // bytes memory valuestring = bytesSlice(input, stringStart, p);
+                    state = STATE_LIST;
+                    continue;
+                }
+            }
+            if (state == STATE_LIST) {
+                if (c == "\"") {
+                    state = STATE_KEY;
+                    stringStart = p + 1;
+                    continue;
+                }
+                if (c == "}") {
+                    depth--;
+                    continue;
+                }
+            }
+            if (state == STATE_KEY) {
+                if (c == "\"") {
+                    bytes memory keystring = bytesSlice(input, stringStart, p);
+                    path[depth] = keccak256(abi.encodePacked(keystring));
+                    state = STATE_VALUE;
+                    continue;
+                }
+            }
+        }
+
+        // finished
+        if ((statusid == 100) || (statusid == 110) || (statusid == 120) || (statusid == 125)) {
+            setEventStatus(eventid, subevent_t1, periods_ft_home > periods_ft_away);
+            setEventStatus(eventid, subevent_t2, periods_ft_home < periods_ft_away);
+            setEventStatus(eventid, subevent_draw, periods_ft_home == periods_ft_away);
+        }
+    }
+
+    mapping (bytes32 => uint) public eventStatus; // 0 - undefined, 1 - for won, 2 - against won, 3- refund
+    
+    function setEventStatus(uint64 eventid, uint64 subevent, bool isForWon) internal {
+        eventStatus[getEventHash(eventid, subevent)] = isForWon ? 1 : 2;
+    }
+
+    function getEventStatus(uint64 eventid, uint64 subevent) public view returns (uint) {
+        return eventStatus[getEventHash(eventid, subevent)];
+    }
+    
+    function payoutHash(uint[] memory bets) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked("payout", bets));
+    }
+
+    
+    function payouts(uint[] calldata bets) external {
+        addActionProof(payoutHash(bets), bets.length / 4 + 1, true);
+    }
+    
+    // return unmatched
+    function paycancel(uint betid) internal {
+        BetItem storage bet = allBets[betid];
+        uint64 amount = bet.amount - bet.matched - bet.cancelled;
+        balanceOfAccount[bet.owner] += amount;
+        bet.cancelled += amount;
+    }
+
+    // return matched + unmatched
+    function payrefund(uint betid) internal {
+        BetItem storage bet = allBets[betid];
+        uint amount = bet.amount - bet.cancelled;
+        balanceOfAccount[bet.owner] += amount;
+        bet.cancelled = bet.amount - bet.matched - bet.cancelled;
+    }
+    
+    // return unmatched + matched + matched_peer
+    function payout(uint betid) internal {
+        BetItem storage bet = allBets[betid];
+        // unmatched + matched + matched_peer
+        uint amount = bet.amount - bet.cancelled + bet.matched_peer;
+        balanceOfAccount[bet.owner] += amount;
+        bet.cancelled = bet.amount - bet.matched - bet.cancelled;
+    }
+    
+    function processPayouts(uint[] memory bets) internal {
+        for (uint i = 0; i < bets.length; i++) {
+            uint betid = bets[i];
+            BetItem storage bet = allBets[betid];
+            
+            if (bet.paid) {
+                continue;
+            }
+            
+            uint betResult = getEventStatus(bet.eventid, bet.subevent);
+            if (betResult == 0) {
+                continue;
+            }
+            
+            if ((betResult == 1) && bet.side) {
+                payout(betid);
+            }
+
+            if ((betResult == 1) && !bet.side) {
+                paycancel(betid);
+            }
+
+            if ((betResult == 2) && !bet.side) {
+                payout(betid);
+            }
+
+            if ((betResult == 2) && bet.side) {
+                paycancel(betid);
+            }
+            
+            if (betResult == 3) {
+                payrefund(betid);
+            }
+            
+            bet.paid = true;
+        }
+    }
+
+    
+    function callbackHash(address caller, bytes memory result) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked("callback", caller, result));
+    }
+    
+    function __callback(bytes32 myid, string memory result) public {
+        myid;
+        addActionProof(callbackHash(msg.sender, bytes(result)), 255, false);
+    }
+    
+    function fetchEventResult (uint sportId, uint year, uint month, uint day, uint country, uint league, uint matchId, uint gasForCb) public payable {
+        uint gasForProvable = provable_getPrice("URL", gasForCb);
+        
+        if (msg.value < gasForProvable) {
+            msg.sender.transfer(msg.value);
+        } else {
+            bytes memory url = abi.encodePacked("json(https://ls.fn.sportradar.com/winline/en/Asia:Yekaterinburg/gismo/sport_matches/",
+                uint2str(sportId),
+                "/",
+                uint2str(year),
+                "-",
+                uint2str_pad(month),
+                "-",
+                uint2str_pad(day),
+                "/0).doc[0].data.sport.realcategories[",
+                uint2str(country),
+                "].tournaments[",
+                uint2str(league),
+                "].matches[",
+                uint2str(matchId),
+                "]"
+            );
+            
+            provable_query("URL", string(url), gasForCb);
+            msg.sender.transfer(msg.value - gasForProvable);
+        }
+    }
 
     function betHash (address account, uint eventid, uint subevent, uint amount, uint odds, bool side) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked("bet", account, eventid, subevent, amount, odds, side));
@@ -71,6 +311,22 @@ contract Bettex {
                     return;
                 }
                 bytes32 func = actions[pos++];
+                
+                if (func == bytes32("__callback")) {
+                    address account = address(uint256(actions[pos++]));
+                    uint len = uint256(actions[pos++]);
+                    bytes memory data = new bytes(len);
+                    uint pos4 = pos * 32 + 32;
+                    assembly {
+                        calldatacopy(data, pos4, len)
+                    }
+                    if (commitPhase && (pos >= minedOffset)) {
+                        
+                    } else {
+                        actionHash = bytes31(keccak256(abi.encodePacked(actionHash, callbackHash(account, data))));
+                    }
+                }
+                
                 if (func == bytes32("deposit")) {
                     address account = address(uint256(actions[pos++]));
                     uint amount = uint256(actions[pos++]);
@@ -113,6 +369,19 @@ contract Bettex {
                         actionHash = bytes31(keccak256(abi.encodePacked(actionHash, cancelHash(account, betid))));
                     }
                 }
+                if (func == bytes32("payouts")) {
+                    uint betlen = uint256(actions[pos++]);
+                    uint[] memory bets = new uint[](betlen);
+                    for (uint x = 0; x < betlen; x++) {
+                        bets[x] = uint256(actions[pos++]);
+                    }
+                    if (commitPhase && (pos >= minedOffset)) {
+                        processPayouts(bets);
+                    } else {
+                        actionHash = bytes31(keccak256(abi.encodePacked(actionHash, payoutHash(bets))));
+                    }
+                }
+
             }
             if (!commitPhase) {
                 require(actionHash == checkpoints[minedCheckpoint + 1].hash, "action hash mismatch");
@@ -277,5 +546,50 @@ contract Bettex {
             right = iterator.nextKeys[right];
         }
         SortedIteratorHelper_insertAfter(iterator, left, key);
+    }
+    
+        function uint2str_pad(uint i) internal pure returns (string memory s) {
+        if (i >= 10) {
+            return uint2str(i);
+        }
+        return string(abi.encodePacked("0", uint2str(i)));
+    }
+    
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint j = _i;
+        uint len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint k = len - 1;
+        while (_i != 0) {
+            bstr[k--] = byte(uint8(48 + _i % 10));
+            _i /= 10;
+        }
+        return string(bstr);
+    }
+    
+       function bytes2uint(bytes memory s, uint start, uint end) internal pure returns (uint64) {
+        uint64 retval = 0;
+        for (uint i = start; i < end; i++) {
+            retval = retval * 10 + (uint8(s[i]) - 48);
+        }
+        return retval;
+    }
+    
+    function bytesSlice(bytes memory s, uint start, uint end) internal pure returns (bytes memory) {
+        if (end <= start) {
+            return "";
+        }
+        bytes memory retval = new bytes(end - start);
+        for (uint i = start; i < end; i++) {
+            retval[i - start] = s[i];
+        }
+        return retval;
     }
 }

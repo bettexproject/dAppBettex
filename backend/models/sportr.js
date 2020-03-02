@@ -26,7 +26,6 @@ module.exports = (app) => {
         date: String,
         sportId: Number,
 
-        fetchResultId: String,
         fetchResultBlock: Number,
         fetchResultData: String,
     });
@@ -91,10 +90,9 @@ module.exports = (app) => {
             return Array.isArray(records) ? outputArray : outputArray[0];
         },
 
-        updateFetchResultId: async (external_id, resultId, resultBlock) => {
+        updateFetchResultBlock: async (external_id, resultBlock) => {
             const record = await sportrModel.findOne({ external_id });
             if (record) {
-                record.fetchResultId = resultId;
                 record.fetchResultBlock = resultBlock;
                 record.fetchResultData = null;
                 await record.save();
@@ -110,7 +108,7 @@ module.exports = (app) => {
         },
 
         getPendingEventProofs: async () => {
-            return await sportrModel.find({ fetchResultId: { $ne: null }, fetchResultData: { $eq: null } });
+            return await sportrModel.find({ fetchResultBlock: { $ne: null }, fetchResultData: { $eq: null } });
         },
 
         getUnfetchedProofs: async () => {
@@ -121,7 +119,7 @@ module.exports = (app) => {
             const ret = {};
             for (let i = 0; i < events.length; i++) {
                 const record = await sportrModel.findOne({ external_id: events[i] });
-                if (record && !record.fetchResultId) {
+                if (record && !record.fetchResultBlock) {
                     const extendedRecord = app.models.sportr.extendByStacksAndResults(record);
                     _.forEach(extendedRecord.results, (result, subevent) => {
                         if ((result === true) || (result === false)) {
