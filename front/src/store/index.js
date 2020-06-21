@@ -56,5 +56,10 @@ const store = new Vuex.Store({
 });
 
 waitForWS().then(() => store.dispatch('onFirstConnect'));
+if (window.ethereum) {
+  window.ethereum.on('networkChanged', () => store.dispatch('logout'));
+  window.ethereum.on('accountsChanged', () => store.dispatch('logout'));
+}
+
 
 export default store;

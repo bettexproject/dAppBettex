@@ -4,6 +4,8 @@ module.exports = {
   ODDS_PRECISION: 100,
   minCreateMarketBet: 5,
 
+  requiredChainId: '0x3',
+
   subevents: {
     1: 't1',
     2: 't2',

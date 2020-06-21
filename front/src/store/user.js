@@ -1,5 +1,6 @@
 import api from './api';
 import config from '../config/config';
+import Vue from 'vue';
 
 export default {
     state: {
@@ -23,6 +24,13 @@ export default {
                 .then(auth => {
                     commit('setAuth', auth);
                     dispatch('onLogin');
+                })
+                .catch(err => {
+                    Vue.notify({
+                        group: 'notifications',
+                        title: 'Login',
+                        text: err,
+                    });
                 });
         },
         logout({ commit }) {
@@ -53,7 +61,7 @@ export default {
                 params: account,
             });
 
-            
+
         },
     },
     getters: {

@@ -6,6 +6,11 @@ export default async () => {
   }
 
   const accounts = await window.ethereum.enable();
+  console.log(window.ethereum.chainId);
+  if (window.ethereum.chainId !== config.requiredChainId) {
+    throw 'invalid chaid id (testnet instead of mainnet and so on)';
+  }
+
   return {
     name: 'metamask',
     address: accounts[0],
