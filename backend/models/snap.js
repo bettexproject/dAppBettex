@@ -78,6 +78,14 @@ module.exports = (app) => {
     const snapModel = app.mongoose.model('Snap', snapSchema);
 
     const snap = {
+
+        gotConfirmedEventResults: async (results) => {
+            const resultsDecoded = JSON.parse(results);
+            const eventId = resultsDecoded._id;
+            console.log(results);
+            console.log('id', eventId);
+        },
+
         consumeOpposite: (list, betIndex, allBets) => {
             const thisBet = allBets[betIndex];
             const sortValue = thisBet.odds;
@@ -136,7 +144,7 @@ module.exports = (app) => {
                     const bet = state.allBets[input.bets[i] - 1];
                     if (!bet.paid) {
                         const eventKey = `${bet.eventid}-${bet.subevent}`;
-                        const betResult = state.resultByEvents[eventKey];
+                        const betResult = state.eventResults[eventKey];
                         if ((betResult === 1) && (bet.side === true)) {
                             payoutBet(bet, state.balanceOfAccount);
                         }
@@ -153,7 +161,7 @@ module.exports = (app) => {
                             payrefund(betid, state.balanceOfAccount);
                         }
                         bet.paid = true;
-                        console.log(bet);
+                        console.log(betResult, bet);
                     }
                 }
             }
@@ -222,8 +230,32 @@ module.exports = (app) => {
                     }
                 }
             }
+
+            if (input.name === '__callback') {
+                console.log('replay callback', input);
+                const result = JSON.parse(input.result);
+                const statusid = result.status._id;
+                const eventid = result._id;
+                const periods_ft_home = result.periods.ft.home;
+                const periods_ft_away = result.periods.ft.away;
+
+                const subevent_t1 = 1;
+                const subevent_t2 = 2;
+                const subevent_draw = 3;
+
+
+                if ((statusid == 100) || (statusid == 110) || (statusid == 120) || (statusid == 125)) {
+                    snap.setEventStatus(state, eventid, subevent_t1, periods_ft_home > periods_ft_away);
+                    snap.setEventStatus(state, eventid, subevent_t2, periods_ft_home < periods_ft_away);
+                    snap.setEventStatus(state, eventid, subevent_draw, periods_ft_home == periods_ft_away);
+                }
+            }
         },
 
+        setEventStatus: (state, eventid, subevent, boolStatus) => {
+            const eventKey = `${eventid}-${subevent}`;
+            state.eventResults[eventKey] = boolStatus ? 1 : 2;
+        },
         /**
          * get state from previous state and additional txs
          */
@@ -233,6 +265,7 @@ module.exports = (app) => {
                 balanceOfAccount: {},
                 eventStacks: {},
                 allBets: [],
+                eventResults: {},
                 betsByEvents: {},
                 resultByEvents: {},
             };
@@ -241,7 +274,7 @@ module.exports = (app) => {
             for (let i = 0; i < additionalTxs.length; i++) {
                 const tx = additionalTxs[i];
                 // if (prevBlock && (tx.blockNumber > prevBlock) && (tx.blockNumber > 0) && (tx.blockNumber < app.currentHeight - config.rescanDepth)) {
-                    // await snapModel.create({ blockNumber: prevBlock, state: JSON.stringify(savedState) });
+                // await snapModel.create({ blockNumber: prevBlock, state: JSON.stringify(savedState) });
                 // }
                 prevBlock = tx.blockNumber;
                 snap.replayTx(savedState, tx);
@@ -261,10 +294,10 @@ module.exports = (app) => {
             const fromBlock = (lastConfirmedRecord && lastConfirmedRecord.length) ? lastConfirmedRecord[0].blockNumber : 0;
             return await snap.replay(fromBlock);
         },
-        updateResultByEvent: (eventid, subevent, result) => {
-            const eventKey = `${eventid}-${subevent}`;
-            snap.currentState.resultByEvents[eventKey] = result;
-        },
+        // updateResultByEvent: (eventid, subevent, result) => {
+        //     const eventKey = `${eventid}-${subevent}`;
+        //     snap.currentState.resultByEvents[eventKey] = result;
+        // },
         update: async () => {
             const prevBalances = _.clone(snap.currentState.balanceOfAccount || {});
             const prevBets = _.clone(snap.currentState.allBets || []);
@@ -304,12 +337,18 @@ module.exports = (app) => {
             return ret;
         },
 
-        getUnpaidBets: (eventid, subevent) => {
+        getUnpaidBetsWithResults: () => {
             return _.filter(snap.currentState.allBets, bet => !bet.paid && (bet.blockNumber > 0)
-                && (!eventid || (eventid === bet.eventid))
-                && (!subevent || (subevent === bet.subevent))
-            )
+                && !bet.payoutRequested
+                && (snap.currentState.eventResults[`${bet.eventid}-${bet.subevent}`]));
         },
+
+        // getUnpaidBets: (eventid, subevent) => {
+        //     return _.filter(snap.currentState.allBets, bet => !bet.paid && (bet.blockNumber > 0)
+        //         && (!eventid || (eventid === bet.eventid))
+        //         && (!subevent || (subevent === bet.subevent))
+        //     )
+        // },
 
         getAccountBalance: (account) => {
             return snap.currentState.balanceOfAccount[account] || 0;
@@ -330,6 +369,7 @@ module.exports = (app) => {
         currentState: {
             balanceOfAccount: {},
             eventStacks: {},
+            eventResults: {},
             allBets: [],
         },
     };

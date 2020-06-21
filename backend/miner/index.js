@@ -44,7 +44,12 @@ module.exports = (app) => {
                                 serializedActions.push(`0x${address2bytes32(unmined[i].account)}`);
                                 string2bytes32(input.result, serializedActions);
                             }
+                            if (input.name === 'payouts') {
+                                serializedActions.push(`0x${uint2bytes32(input.bets.length)}`);
+                                _.forEach(input.bets, b => serializedActions.push(`0x${uint2bytes32(b)}`));
+                            }
                         }
+
                         console.log(serializedActions);
                         const calldata = contract.methods.playback(serializedActions, config.minerGasMin).encodeABI();
                         console.log(calldata);
@@ -64,14 +69,14 @@ module.exports = (app) => {
             }
         },
         fetchResults: async () => {
-            for (;;) {
+            for (; ;) {
                 try {
                     const need2fetch = await app.models.sportr.getUnfetchedProofs();
                     if (need2fetch.length > 0) {
                         const eventid = need2fetch[0];
-    
+
                         await app.models.sportr.updateFetchResultBlock(eventid, await web3.eth.getBlockNumber());
-    
+
                         const lastEvent = await app.models.sportr.findById(eventid);
                         if (lastEvent) {
                             const updatedEvent = await findEventIdx(lastEvent);
@@ -89,7 +94,7 @@ module.exports = (app) => {
                                         matchId,
                                         config.eventProvableGasAmount).encodeABI();
                                 console.log(callData);
-    
+
                                 const nonce = await web3.eth.getTransactionCount(eventAcc.address);
                                 const tx = await callContract(config.escrowAddress,
                                     config.eventProvableContribution,
@@ -99,19 +104,43 @@ module.exports = (app) => {
                                     Math.round(config.eventGasPriceHi),
                                     config.eventPrivKey)
                                     .catch(console.log);
-    
+
                                 if (tx && tx.transactionHash) {
                                     await app.models.sportr.updateFetchResultBlock(eventid, tx.blockNumber);
                                 }
                             }
                         }
                     }
-                } catch (e) { 
+
+                    const need2pay = app.models.snap.getUnpaidBetsWithResults();
+                    if (need2pay.length > 0) {
+                        console.log(need2pay);
+                        const callData =
+                            contract.methods.payouts(_.map(need2pay, b => b.betid)).encodeABI();
+                        console.log(callData);
+
+                        const nonce = await web3.eth.getTransactionCount(eventAcc.address);
+                        const tx = await callContract(config.escrowAddress,
+                            0,
+                            callData,
+                            nonce,
+                            config.eventGasLimit,
+                            Math.round(config.eventGasPriceHi),
+                            config.eventPrivKey)
+                            .catch(console.log);
+
+                        if (tx && tx.transactionHash) {
+                            _.forEach(need2pay, unpaidBet => {
+                                unpaidBet.payoutRequested = Date.now();
+                            });
+                        }
+                    }
+                } catch (e) {
                     console.log(e);
                 }
                 await new Promise(r => setTimeout(r, 10000));
             }
-        }
+        },
     };
     app.miner = miner;
     miner.endlessScan();

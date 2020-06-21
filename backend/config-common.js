@@ -16,6 +16,7 @@ module.exports = {
         cancel: { len: 8, force: false },
         withdraw: { len: 8, force: true },
         __callback: { len: 230, force: true },
+        payouts: { len: 230, force: true },
     },
 
     FetchResultActivated: '0x36323d6466ffb8bdfde5e5e719ee14d5afff4fdda2ade0c3a1cbd80109ac9b48',

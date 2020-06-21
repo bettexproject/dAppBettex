@@ -5,23 +5,27 @@ const _ = require('lodash');
 
 const isFinished = (event) => ([100, 110, 120, 125].indexOf(parseInt(event.status)) >= 0);
 const sportHasDraw = (sport) => (['Soccer'].indexOf(sport) >= 0);
-const sports = [1, 2, 4, 5];
-const countryWhitelist = [
-    'England',
-    'France',
-    'Germany',
-    'International',
-    'International Clubs',
-    'Italy',
-    'Netherlands',
-    'Portugal',
-    'Russia',
-    'Spain',
-    'Ukraine',
-    'USA',
-    'ATP',
-    'WTA',
-];
+// const sports = [1, 2, 4, 5];
+const sports = [1];
+const countryWhitelist = ['Belarus'];
+// const sports = [160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172];
+// const countryWhitelist = [
+//     'Belarus',
+//     'England',
+//     'France',
+//     'Germany',
+//     'International',
+//     'International Clubs',
+//     'Italy',
+//     'Netherlands',
+//     'Portugal',
+//     'Russia',
+//     'Spain',
+//     'Ukraine',
+//     'USA',
+//     'ATP',
+//     'WTA',
+// ];
 
 const ex = {
     convertPlaneToStruct: (eventAsPlane) => {
@@ -31,7 +35,7 @@ const ex = {
         };
     },
     getEventResultsFromStruct: (event) => {
-        const results = {};
+        results = {};
         results[subeventsReverse.t1] = isFinished(event) ? (event.teams[0].ft > event.teams[1].ft) : null;
         results[subeventsReverse.t2] = isFinished(event) ? (event.teams[0].ft < event.teams[1].ft) : null;
         results[subeventsReverse.draw] = (!isFinished(event) || !sportHasDraw(event.sport)) ? null : (event.teams[0].ft === event.teams[1].ft);
@@ -56,7 +60,8 @@ const ex = {
                 const sportName = apiRequest.data.doc[0].data.sport.name;
                 _.forEach(apiRequest.data.doc[0].data.sport.realcategories, (country, countryId) => {
                     const countryName = country.name;
-                    if (countryWhitelist.indexOf(countryName) >= 0) {
+                    if (countryWhitelist.indexOf(countryName) >= 0)
+                    {
                         _.forEach(country.tournaments, (league, leagueId) => {
                             const leaugueName = league.name;
                             _.forEach(league.matches, (match, matchId) => {

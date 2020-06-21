@@ -1,4 +1,4 @@
-console.log(JSON.stringify({
+{
     "status": {
         "_doc": "status",
         "name": "Ended",
@@ -6,17 +6,137 @@ console.log(JSON.stringify({
     },
     "windadvantage": 0,
     "tobeannounced": false,
-    "_seasonid": 66881,
-    "_rcid": 7,
+    "_seasonid": 76761,
+    "_rcid": 91,
     "_sid": 1,
     "overtimelength": 15,
     "weather": null,
     "result": {
-        "home": 0,
-        "away": 2,
-        "winner": "away"
+        "home": 1,
+        "away": 0,
+        "winner": "home"
     },
-    "_id": 18440334,
-    "round": 21,
-    "wind": null
-}));
+    "_tid": 616,
+    "facts": true,
+    "ended_uts": 1589730645,
+    "_dt": {
+        "tz": "+05",
+        "_doc": "time",
+        "uts": 1589724000,
+        "time": "19:00",
+        "date": "17/05/20",
+        "tzoffset": 18000
+    },
+    "ptime": 1589730645,
+    "pitchcondition": null,
+    "roundname": {
+        "_doc": "tableround",
+        "name": 9,
+        "_id": 9
+    },
+    "updated_uts": 1589730980,
+    "periodlength": 45,
+    "week": 20,
+    "stadiumid": 16038,
+    "_utid": 169,
+    "numberofperiods": 2,
+    "_mclink": true,
+    "cards": {
+        "home": {
+            "yellow_count": 4,
+            "red_count": 1
+        },
+        "away": {
+            "yellow_count": 3,
+            "red_count": 0
+        }
+    },
+    "coverage": {
+        "scoutconnected": true,
+        "livetable": 50297,
+        "scouttest": false,
+        "tacticallineup": false,
+        "deepercoverage": false,
+        "injuries": 0,
+        "tiebreak": null,
+        "hasstats": true,
+        "lmtsupport": 3,
+        "inlivescore": true,
+        "formations": 0,
+        "substitutions": true,
+        "ballspotting": true,
+        "advantage": null,
+        "mediacoverage": false,
+        "basiclineup": true,
+        "lineup": 2,
+        "scoutcoveragestatus": 0,
+        "matchdatacomplete": false,
+        "venue": false,
+        "multicast": true,
+        "penaltyshootout": 2,
+        "scoutmatch": 1,
+        "liveodds": true,
+        "cornersonly": false
+    },
+    "removed": false,
+    "hf": 2.6,
+    "temperature": null,
+    "distance": 3,
+    "_sk": false,
+    "postponed": false,
+    "localderby": true,
+    "walkover": false,
+    "matchstatus": "result",
+    "_doc": "match",
+    "teams": {
+        "home": {
+            "haslogo": true,
+            "name": "Dinamo Minsk",
+            "_sid": 1,
+            "_doc": "team",
+            "virtual": false,
+            "mediumname": "FC Dinamo Minsk",
+            "iscountry": false,
+            "_id": 115037,
+            "nickname": null,
+            "abbr": "DMI",
+            "uid": 3361
+        },
+        "away": {
+            "haslogo": true,
+            "name": "Isloch",
+            "_sid": 1,
+            "_doc": "team",
+            "virtual": false,
+            "mediumname": "FC Isloch",
+            "iscountry": false,
+            "_id": 7222226,
+            "nickname": null,
+            "abbr": "ISL",
+            "uid": 42965
+        }
+    },
+    "p": "0",
+    "timeinfo": {
+        "started": null,
+        "played": null,
+        "injurytime": null,
+        "ended": "1589730645",
+        "running": false,
+        "remaining": null
+    },
+    "cancelled": false,
+    "_id": 21893951,
+    "round": 9,
+    "wind": null,
+    "periods": {
+        "p1": {
+            "home": 0,
+            "away": 0
+        },
+        "ft": {
+            "home": 1,
+            "away": 0
+        }
+    }
+}

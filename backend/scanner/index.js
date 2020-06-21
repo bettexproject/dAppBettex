@@ -33,7 +33,7 @@ module.exports = (app) => {
                 await scanner.checkTx(txs[i], true);
             }
         },
-
+        
         endlessScan: async () => {
             const firstBlock = await contract.methods.firstBlock().call();
             for (; ;) {

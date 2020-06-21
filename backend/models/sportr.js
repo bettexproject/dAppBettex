@@ -28,6 +28,8 @@ module.exports = (app) => {
 
         fetchResultBlock: Number,
         fetchResultData: String,
+
+        callbackResultBlock: Number,
     });
 
 
@@ -65,9 +67,8 @@ module.exports = (app) => {
             record.teams = JSON.stringify(params.teams);
             record.results = JSON.stringify(getEventResultsFromStruct(params));
 
-            _.forEach(params.results, (result, memo) =>
-                app.models.snap.updateResultByEvent(record.external_id, subeventsReverse[memo], result));
-
+            // _.forEach(params.results, (result, memo) =>
+            //     app.models.snap.updateResultByEvent(record.external_id, subeventsReverse[memo], result));
 
             await record.save();
             app.models.sportr.notifyChange(record);
@@ -133,6 +134,31 @@ module.exports = (app) => {
             }
             return _.keys(ret);
         },
+
+        // getUnpaidFinishedBets: async () => {
+        //     const matchedUnpaid = app.models.snap.getMatchedUnpaidSubevents();
+        //     const eventsH = {};
+        //     _.forEach(matchedUnpaid, (d, i) => eventsH[(i.split('-'))[0]] = true);
+        //     const events = _.keys(eventsH);
+        //     const eventkeys = {};
+        //     for (let i = 0; i < events.length; i++) {
+        //         const record = await sportrModel.findOne({ external_id: events[i] });
+        //         if (record && record.callbackResultBlock) {
+        //             const extendedRecord = app.models.sportr.extendByStacksAndResults(record);
+        //             _.forEach(extendedRecord.results, (result, subevent) => {
+        //                 if ((result === true) || (result === false)) {
+        //                     const eventKey = `${record.external_id}-${subevent}`;
+        //                     if (matchedUnpaid[eventKey]) {
+        //                         eventkeys[extendedRecord.external_id] = true;
+        //                     }
+        //                 }
+        //             });
+        //         }
+        //     }
+        //     _.forEach(eventkeys, (d, eventKey) => {
+
+        //     });
+        // },
 
         getEventsByBets: async (bets) => {
             const events = {};
