@@ -41,7 +41,8 @@ export const eventDateFilters = {
 };
 
 const extendEvents = (events) => {
-  return _.map(events, event => {
+  console.log(events);
+  return _.mapValues(events, event => {
     let total_count = 0;
     let matched_count = 0;
     let matched_amount = 0;
