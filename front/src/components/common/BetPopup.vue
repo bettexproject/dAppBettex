@@ -114,7 +114,7 @@ export default {
         side: this.value.side,
         subevent: this.value.subevent,
         event: this.event.external_id,
-        amount: Math.round(this.side === 'for' ? this.amount : this.amount * (this.odds - 1)),
+        amount: this.side === 'for' ? this.amount : this.amount * (this.odds - 1),
         odds: this.odds
       })
         .then(() => {
