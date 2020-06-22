@@ -7,25 +7,25 @@ const isFinished = (event) => ([100, 110, 120, 125].indexOf(parseInt(event.statu
 const sportHasDraw = (sport) => (['Soccer'].indexOf(sport) >= 0);
 // const sports = [1, 2, 4, 5];
 const sports = [1];
-const countryWhitelist = ['Belarus'];
+// const countryWhitelist = ['Belarus'];
 // const sports = [160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172];
-// const countryWhitelist = [
-//     'Belarus',
-//     'England',
-//     'France',
-//     'Germany',
-//     'International',
-//     'International Clubs',
-//     'Italy',
-//     'Netherlands',
-//     'Portugal',
-//     'Russia',
-//     'Spain',
-//     'Ukraine',
-//     'USA',
-//     'ATP',
-//     'WTA',
-// ];
+const countryWhitelist = [
+    'Belarus',
+    'England',
+    'France',
+    'Germany',
+    'International',
+    'International Clubs',
+    'Italy',
+    'Netherlands',
+    'Portugal',
+    'Russia',
+    'Spain',
+    'Ukraine',
+    // 'USA',
+    'ATP',
+    'WTA',
+];
 
 const ex = {
     convertPlaneToStruct: (eventAsPlane) => {

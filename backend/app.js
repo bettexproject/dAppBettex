@@ -12,4 +12,3 @@ models(app).then(() => {
     sportr(app);
     api(app);
 });
-

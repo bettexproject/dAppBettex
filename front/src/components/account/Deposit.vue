@@ -4,7 +4,7 @@
         <label for="deposit_amount">Deposit amount</label>
         <input type="text" id="deposit_amount" v-model="amount">
         <button @click="doMakeDeposit">Deposit</button>
-        <button @click="unlockDeposit">Unlock</button>
+        <button @click="unlockDeposit" v-if="!fakeDeposit">Unlock</button>
       </div>
       <Paginate :items="itemsSorted">
         <div slot-scope="{ items }">
@@ -55,11 +55,11 @@
     methods: {
       ...mapActions(['makeDeposit', 'unlockDeposit']),
       doMakeDeposit() {
-        this.makeDeposit(this.amount);
+        this.makeDeposit(this.amount * config.decimalMultiplicator);
       },
     },
     data() {
-      return { amount: 0 };
+      return { amount: config.fakeDeposit ? 1000 : 0, fakeDeposit: config.fakeDeposit };
     },
   };
 </script>

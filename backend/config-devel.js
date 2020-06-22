@@ -16,6 +16,6 @@ module.exports = {
     eventGasLimit: 200000,
     eventProvableContribution: 10**16,
     sportrDepthFrom: -7,
-    sportrDepthTo: 1,
+    sportrDepthTo: 7,
 };
 

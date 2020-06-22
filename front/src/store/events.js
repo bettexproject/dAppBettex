@@ -164,6 +164,7 @@ export default {
   mutations: {
     setEventFilter: (state, val) => state.eventFilter = val,
     setDateFilter: (state, val) => state.eventDateFilter = val,
+    setMaxPage: (state, val) => state.maxPage = Math.ceil(val / state.perPage),
     onEvents: (state, val) => {
       const newEvents = convertEvents(val);
       _.forEach(newEvents, event => {

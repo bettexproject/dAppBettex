@@ -5,6 +5,7 @@ module.exports = {
   minCreateMarketBet: 5,
 
   requiredChainId: '0x3',
+  fakeDeposit: true,
 
   subevents: {
     1: 't1',
