@@ -194,7 +194,6 @@ module.exports = (app) => {
             const record = await sportrModel.findOne({ external_id: eventid });
             if (record) {
                 app.models.sportr.notifyChange(record);
-                console.log('notify change');
             }
         },
         getCategoryTree: async () => {

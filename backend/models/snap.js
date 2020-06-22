@@ -167,7 +167,23 @@ module.exports = (app) => {
             }
             if (input.name === 'deposit') {
                 state.balanceOfAccount[tx.account] = (state.balanceOfAccount[tx.account] || 0) + parseInt(input.amount);
+                state.balanceChanges[tx.account] = state.balanceChanges[tx.account] || [];
+                state.balanceChanges[tx.account].push({
+                    amount: input.amount,
+                    hash: tx.hash,
+                });
             }
+            if (input.name === 'withdraw') {
+                if (state.balanceOfAccount[tx.account] >= input.amount) {
+                    state.balanceOfAccount[tx.account] -= input.amount;
+                    state.balanceChanges[tx.account] = state.balanceChanges[tx.account] || [];
+                    state.balanceChanges[tx.account].push({
+                        amount: -input.amount,
+                        hash: tx.hash,
+                    });
+                }
+            }
+
             if (input.name === 'bet') {
                 if (state.balanceOfAccount[tx.account] >= input.amount) {
                     state.balanceOfAccount[tx.account] -= input.amount;
@@ -214,11 +230,6 @@ module.exports = (app) => {
 
                 }
             }
-            if (input.name === 'withdraw') {
-                if (state.balanceOfAccount[tx.account] >= input.amount) {
-                    state.balanceOfAccount[tx.account] -= input.amount;
-                }
-            }
 
             if (input.name === 'cancel') {
                 const cancel_bet = state.allBets[input.betid - 1];
@@ -263,6 +274,7 @@ module.exports = (app) => {
             const stateRecord = await snapModel.findOne({ blockNumber: fromBlock });
             const savedState = stateRecord ? JSON.parse(stateRecord.state) : {
                 balanceOfAccount: {},
+                balanceChanges: {},
                 eventStacks: {},
                 allBets: [],
                 eventResults: {},
@@ -310,6 +322,7 @@ module.exports = (app) => {
             _.forEach(_.keys(accounts), (account) => {
                 if (prevBalances[account] !== snap.currentState.balanceOfAccount[account]) {
                     app.api.fireEvent(`balance-${account}`, snap.currentState.balanceOfAccount[account]);
+                    app.api.fireEvent(`balancechanges-${account}`, snap.currentState.balanceChanges[account]);
                 }
             });
 
@@ -353,6 +366,9 @@ module.exports = (app) => {
         getAccountBalance: (account) => {
             return snap.currentState.balanceOfAccount[account] || 0;
         },
+        getAccountBalanceChanges: (account) => {
+            return snap.currentState.balanceChanges[account] || [];
+        },
         getAccountBets: (account) => {
             return _.filter(snap.currentState.allBets, bet => bet.account === account);
         },
@@ -368,6 +384,7 @@ module.exports = (app) => {
 
         currentState: {
             balanceOfAccount: {},
+            balanceChanges: {},
             eventStacks: {},
             eventResults: {},
             allBets: [],

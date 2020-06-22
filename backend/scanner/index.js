@@ -33,7 +33,7 @@ module.exports = (app) => {
                 await scanner.checkTx(txs[i], true);
             }
         },
-        
+
         endlessScan: async () => {
             const firstBlock = await contract.methods.firstBlock().call();
             for (; ;) {
@@ -45,7 +45,7 @@ module.exports = (app) => {
 
                     for (let i = scanFrom; i <= lastKnown; i++) {
                         console.log('scanning', i);
-                        const blockData = await web3.eth.getBlock(i, true).catch(() => {});
+                        const blockData = await web3.eth.getBlock(i, true).catch(() => { });
                         if (!blockData) {
                             continue;
                         }
@@ -62,12 +62,12 @@ module.exports = (app) => {
         pendingScanner: async () => {
             web3wss.eth.subscribe('pendingTransactions', (err, txhash) => {
                 web3.eth.getTransaction(txhash)
-                .then(tx => scanner.checkTx(tx, false));
+                    .then(tx => scanner.checkTx(tx, false));
             });
         },
 
         recheckLastTx: async () => {
-            for (;;) {
+            for (; ;) {
                 try {
                     const lastKnown = await web3.eth.getBlockNumber();
                     const lastTxs = await app.models.proof.getLastTx(lastKnown - config.rescanDepth);

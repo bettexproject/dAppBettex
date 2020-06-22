@@ -42,6 +42,7 @@ module.exports = (app) => {
                 }
                 if (what === 'balance') {
                     socket.emit(`balance-${params}`, app.models.snap.getAccountBalance(params));
+                    socket.emit(`balancechanges-${params}`, app.models.snap.getAccountBalanceChanges(params));
                 }
                 if (what === 'categories') {
                     app.models.sportr.getCategoryTree()

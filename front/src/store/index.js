@@ -8,7 +8,7 @@ import SocketClient from 'socket.io-client';
 import user from './user';
 import api from './api';
 
-const socket = SocketClient('http://localhost:8090');
+const socket = SocketClient('//:8090');
 
 Vue.use(Vuex);
 

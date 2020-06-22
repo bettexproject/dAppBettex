@@ -16,7 +16,6 @@ module.exports = (app) => {
             type: Boolean,
             default: true,
         },
-        minedAt: Number,
     });
     proofSchema.index({ account: 1 });
     const proofModel = app.mongoose.model('proof', proofSchema);

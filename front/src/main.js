@@ -26,12 +26,8 @@ Vue.filter('round2', data => {
   return isNaN(data) ? data : parseFloat(data.toFixed(2));
 });
 
-Vue.filter('wavesExporer', (data, params) => {
-  return data && `<a target="_blank" href="${config.explorer}/tx/${data}">${params}</a>`;
-});
-
-Vue.filter('btxcExporer', (data, params) => {
-  return data && `<a target="_blank" href="${config.btxcexplorer}/tx/${data}">${params}</a>`;
+Vue.filter('ethExplorer', (data, params) => {
+  return data && `<a target="_blank" href="${config.ethExplorer}/${data}">${params}</a>`;
 });
 
 store.dispatch('fetchPayouts');

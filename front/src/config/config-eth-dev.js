@@ -7,6 +7,8 @@ module.exports = {
   requiredChainId: '0x3',
   fakeDeposit: true,
 
+  ethExplorer: 'https://ropsten.etherscan.io/tx',
+
   subevents: {
     1: 't1',
     2: 't2',

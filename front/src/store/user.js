@@ -7,12 +7,14 @@ const NIGHT_MODE_KEY = 'nightmode';
 export default {
     state: {
         balance: 0,
+        balanceChanges: [],
         auth: null,
         nightMode: localStorage.getItem(NIGHT_MODE_KEY) === 'true',
     },
     mutations: {
         setAuth: (state, val) => state.auth = val,
         setBalance: (state, val) => state.balance = val,
+        setBalanceChanges: (state, val) => state.balanceChanges = val,
         setNightMode: (state, val) => {
             state.nightMode = val;
             localStorage.setItem(NIGHT_MODE_KEY, val);
@@ -54,6 +56,10 @@ export default {
                 event: `balance-${account}`,
                 listener: (balance) => commit('setBalance', balance),
             });
+            dispatch('addSocketListener', {
+                event: `balancechanges-${account}`,
+                listener: (changes) => commit('setBalanceChanges', changes),
+            });
             dispatch('emitSocketLoad', {
                 event: 'balance',
                 params: account,
@@ -77,5 +83,6 @@ export default {
         getUserAddress: (state, getters) => getters.getAuth && getters.getAuth.address,
         isLoggedIn: (state, getters) => !!getters.getAuth,
         getBalance: (state) => state.balance / config.decimalMultiplicator,
+        getBalanceChanges: (state) => _.reverse(_.map(state.balanceChanges, c => ({ ...c, amount: c.amount / config.decimalMultiplicator }))),
     },
 }
