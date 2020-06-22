@@ -21,7 +21,7 @@
             <th>Paid</th>
             </thead>
             <tr v-for="item in items" :key="item.betid">
-              <td class="text-nowrap">{{ item.eventTime | moment('DD/MM/YYYY HH:mm') }}</td>
+              <td class="text-nowrap">{{ item.eventTime | moment('DD/MM/YYYY HH:mm') }} {{ item.betid }}</td>
               <td>{{ item.eventName }}</td>
               <td>{{ item.side }} {{ item.typeMnemonic }}</td>
               <td>{{ item.amountNominal | round2 }}</td>

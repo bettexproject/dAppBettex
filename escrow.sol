@@ -399,7 +399,7 @@ contract Bettex is usingProvable {
 
             }
             if (!commitPhase) {
-                // require(actionHash == checkpoints[minedCheckpoint + 1].hash, "action hash mismatch");
+                require(actionHash == checkpoints[minedCheckpoint + 1].hash, "action hash mismatch");
             } else {
                 minedOffset = 0;
                 minedCheckpoint++;
@@ -427,7 +427,7 @@ contract Bettex is usingProvable {
     
     function allBets_add(address owner, bool side, uint64 eventid, uint64 subevent, uint64 amount, uint64 odds) internal {
         ++allBetsSeq;
-        allBets[allBetsSeq] = BetItem(owner, false, side, eventid, subevent, amount, odds, 0, 0, 0);
+        allBets[allBetsSeq] = BetItem(owner, side, false, eventid, subevent, amount, odds, 0, 0, 0);
     }
     
     function BetsForEvent_consumeTop(SortedIteratorHelper storage oppositeSide, BetItem storage betThisSide) internal {
