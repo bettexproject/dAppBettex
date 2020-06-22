@@ -6,7 +6,7 @@ const _ = require('lodash');
 const isFinished = (event) => ([100, 110, 120, 125].indexOf(parseInt(event.status)) >= 0);
 const sportHasDraw = (sport) => (['Soccer'].indexOf(sport) >= 0);
 // const sports = [1, 2, 4, 5];
-const sports = [1];
+const sports = [1, 2, 4, 5];
 // const countryWhitelist = ['Belarus'];
 // const sports = [160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172];
 const countryWhitelist = [
