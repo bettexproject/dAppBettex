@@ -6,8 +6,6 @@ import api from './api';
 const extendBets = (bets, events) => {
     return (_.map(bets, bet => {
         const event = events[bet.eventid];
-        const eventName = (event && event.teams) ? `${event.teams[0].name} - ${event.teams[1].name}` : '';
-        const eventTime = event && event.timestamp;
         const matchable = (bet.amount - bet.matched - bet.cancelled) > 0;
         return {
             ...bet,
@@ -16,8 +14,7 @@ const extendBets = (bets, events) => {
             side: bet.side ? 'for' : 'against',
             odds: bet.odds,
             asset: 'USD',
-            eventName,
-            eventTime,
+            event,
             subevent: config.subevents[bet.subevent],
             cancellable: bet.amount > bet.matched + bet.cancelled,
             spentNominal: bet.matched / config.decimalMultiplicator,

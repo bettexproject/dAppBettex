@@ -1,6 +1,6 @@
 <template>
   <div class="sticky-bet shine-slide" :class="bet.cancellable ? 'sticky-bet-cancellable' : ''">
-    <div class="sticky-bet-title">{{ bet.eventName }}</div>
+    <div class="sticky-bet-title">{{ bet.event.eventName }}</div>
     <!--<div class="sticky-bet-status" v-if="bet.isOpen">OPEN</div>-->
     <!--<div>Match odds {{ bet.side }} {{ bet.subevent }} <b>x{{ bet.odds/100 }}</b></div>-->
     <!--<div>{{ bet.spentNominal | round2 }}/{{ bet.amountNominal | round2 }}</div>-->

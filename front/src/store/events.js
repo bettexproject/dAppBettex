@@ -53,8 +53,14 @@ const extendEvents = (events) => {
         matched_count += subeventData[k].matched_count;
       }));
 
+    const eventName = (event && event.teams) ? `${event.teams[0].name} - ${event.teams[1].name}` : '';
+    const eventTime = event && event.timestamp;
+
+
     return {
       ...event,
+      eventName,
+      eventTime,
       isRunning: isRunning(event),
       isFinished: false && isFinished(event),
       total_count,

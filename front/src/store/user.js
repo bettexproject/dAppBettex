@@ -2,14 +2,21 @@ import api from './api';
 import config from '../config/config';
 import Vue from 'vue';
 
+const NIGHT_MODE_KEY = 'nightmode';
+
 export default {
     state: {
         balance: 0,
         auth: null,
+        nightMode: localStorage.getItem(NIGHT_MODE_KEY) === 'true',
     },
     mutations: {
         setAuth: (state, val) => state.auth = val,
-        setBalance: (state, val) => state.balance = val
+        setBalance: (state, val) => state.balance = val,
+        setNightMode: (state, val) => {
+            state.nightMode = val;
+            localStorage.setItem(NIGHT_MODE_KEY, val);
+        }
     },
     actions: {
         loginLS({ commit, dispatch }) {
