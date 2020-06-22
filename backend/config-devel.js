@@ -1,4 +1,4 @@
-const escrowAddress = '0xe89d7b5F9C5BB880514e284Bd8232Dcd228e3F94';
+const escrowAddress = '0xaC0dfb97eB879667485a1733513F551D021164dC';
 
 module.exports = {
     web3URL: 'https://ropsten.infura.io/v3/177808a3ebca4e57b5847081b0b22ced',

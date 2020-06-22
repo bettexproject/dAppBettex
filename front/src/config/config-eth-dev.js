@@ -1,5 +1,5 @@
 module.exports = {
-  escrowAddress: '0xe89d7b5F9C5BB880514e284Bd8232Dcd228e3F94',
+  escrowAddress: '0xaC0dfb97eB879667485a1733513F551D021164dC',
   decimalMultiplicator: Math.pow(10, 3),
   ODDS_PRECISION: 100,
   minCreateMarketBet: 5,

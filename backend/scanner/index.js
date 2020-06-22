@@ -98,6 +98,6 @@ module.exports = (app) => {
 
     app.scanner = scanner;
     scanner.endlessScan();
-    // scanner.pendingScanner();
+    scanner.pendingScanner();
     scanner.recheckLastTx();
 };

@@ -1,5 +1,5 @@
-pragma solidity ^0.5;
-import "github.com/provable-things/ethereum-api/provableAPI_0.5.sol";
+pragma solidity ^0.6;
+import "github.com/provable-things/ethereum-api/provableAPI_0.6.sol";
 
 
 contract Bettex is usingProvable {
@@ -25,11 +25,8 @@ contract Bettex is usingProvable {
     uint public firstBlock = block.number;
     
     mapping (bytes32 => bytes32) public callbackProofs;
-
-    function parseEventResult(bytes32 myid, string memory inp) public {
-        bytes memory input = bytes(inp);
-        require(callbackProofs[myid] == keccak256(abi.encodePacked(input)), "data mismatch");
-        
+    
+    function parseEventResult(bytes memory input) internal {
         uint64 eventid = 0;
         uint statusid = 0;
         uint periods_ft_home = 0;
@@ -44,6 +41,10 @@ contract Bettex is usingProvable {
             byte c = input[p];
             require(depth >= 0, "depth underflow");
             require(depth < 10, "depth overflow");
+            // if (depth >= 10) {
+            //      bytes memory k = bytesSlice(input, stringStart, p);
+            //      revert(string(k));
+            // }
             if (state == STATE_ORDVALUE) {
                 if ((c == " ") || (c == ":")) {
                     continue;
@@ -128,7 +129,10 @@ contract Bettex is usingProvable {
 
     mapping (bytes32 => uint) public eventStatus; // 0 - undefined, 1 - for won, 2 - against won, 3- refund
     
+    event EventStatusChanged(uint64, uint64, bool);
+    
     function setEventStatus(uint64 eventid, uint64 subevent, bool isForWon) internal {
+        emit EventStatusChanged(eventid, subevent, isForWon);
         eventStatus[getEventHash(eventid, subevent)] = isForWon ? 1 : 2;
     }
 
@@ -213,9 +217,9 @@ contract Bettex is usingProvable {
         return keccak256(abi.encodePacked("callback", caller, result));
     }
     
-    function __callback(bytes32 myid, string memory result) public {
+    function __callback(bytes32 myid, string memory result) override public {
         myid;
-        addActionProof(callbackHash(msg.sender, bytes(result)), 255, false);
+        addActionProof(callbackHash(msg.sender, bytes(result)), 230, true);
     }
     
     function fetchEventResult (uint sportId, uint year, uint month, uint day, uint country, uint league, uint matchId, uint gasForCb) public payable {
@@ -253,7 +257,7 @@ contract Bettex is usingProvable {
     function bet (uint eventid, uint subevent, uint amount, uint odds, bool side) external {
         require(odds > ODDS_PRECISION);
         require(odds <= ODDS_PRECISION * ODDS_PRECISION);
-        addActionProof(betHash(msg.sender, eventid, subevent, amount, odds, side), 2, false);
+        addActionProof(betHash(msg.sender, eventid, subevent, amount, odds, side), 20, false);
     }
     
     event Deposit(address account, uint amount);
@@ -266,7 +270,7 @@ contract Bettex is usingProvable {
         // if (!USDT.transferFrom(msg.sender, address(this), amount)) {
         //     revert();
         // }
-        addActionProof(depositHash(msg.sender, amount), 1, false);
+        addActionProof(depositHash(msg.sender, amount), 8, false);
         emit Deposit(msg.sender, amount);
     }
     
@@ -275,7 +279,7 @@ contract Bettex is usingProvable {
     }
     
     function withdraw(uint amount) external {
-        addActionProof(withdrawHash(msg.sender, amount), 1, true);
+        addActionProof(withdrawHash(msg.sender, amount), 8, true);
     }
 
     function cancelHash (address account, uint betid) internal pure returns (bytes32) {
@@ -283,7 +287,7 @@ contract Bettex is usingProvable {
     }
     
     function cancel (uint betid) external {
-        addActionProof(cancelHash(msg.sender, betid), 1, false);
+        addActionProof(cancelHash(msg.sender, betid), 8, false);
     }
 
     struct ProofItem {
@@ -297,8 +301,11 @@ contract Bettex is usingProvable {
     uint public minedCheckpoint;
     uint public minedOffset;
     
-    mapping (address => uint) balanceOfAccount;
+    mapping (address => uint) public balanceOfAccount;
     
+    event R(bytes);
+    event L(uint);
+
     /* mine from mined checkpoint + mined offset to next checkpoint */
     function playback(bytes32[] calldata actions, uint minGas) external {
         // two pass: commitPhase = false/true
@@ -316,18 +323,24 @@ contract Bettex is usingProvable {
                     address account = address(uint256(actions[pos++]));
                     uint len = uint256(actions[pos++]);
                     bytes memory data = new bytes(len);
-                    uint pos4 = pos * 32 + 32;
-                    assembly {
-                        calldatacopy(data, pos4, len)
+        
+                    for (uint pp = 0; pp < len; pp++) {
+                        uint wordpos = pp / 32 + pos;
+                        uint wordoffset =  (31 - (pp % 32)) * 8;
+                        uint w = uint256(actions[wordpos]);
+                        data[pp] = byte(uint8(w >> wordoffset));
                     }
+
+                    pos += (len + 31) / 32;
+                    
                     if (commitPhase && (pos >= minedOffset)) {
-                        
+                        if (account == provable_cbAddress()) {
+                            parseEventResult(data);
+                        }
                     } else {
                         actionHash = bytes31(keccak256(abi.encodePacked(actionHash, callbackHash(account, data))));
                     }
-                }
-                
-                if (func == bytes32("deposit")) {
+                } else if (func == bytes32("deposit")) {
                     address account = address(uint256(actions[pos++]));
                     uint amount = uint256(actions[pos++]);
                     if (commitPhase && (pos >= minedOffset)) {
@@ -335,8 +348,7 @@ contract Bettex is usingProvable {
                     } else {
                         actionHash = bytes31(keccak256(abi.encodePacked(actionHash, depositHash(account, amount))));
                     }
-                }
-                if (func == bytes32("withdraw")) {
+                } else if (func == bytes32("withdraw")) {
                     address account = address(uint256(actions[pos++]));
                     uint amount = uint256(actions[pos++]);
                     if (commitPhase && (pos >= minedOffset)) {
@@ -347,8 +359,7 @@ contract Bettex is usingProvable {
                     } else {
                         actionHash = bytes31(keccak256(abi.encodePacked(actionHash, withdrawHash(account, amount))));
                     }
-                }
-                if (func == bytes32("bet")) {
+                } else if (func == bytes32("bet")) {
                     address account = address(uint256(actions[pos++]));
                     uint64 eventid = uint64(uint256(actions[pos++]));
                     uint64 subevent = uint64(uint256(actions[pos++]));
@@ -360,16 +371,18 @@ contract Bettex is usingProvable {
                     } else {
                         actionHash = bytes31(keccak256(abi.encodePacked(actionHash, betHash(account, eventid, subevent, amount, odds, side))));
                     }
-                }
-                if (func == bytes32("cancel")) {
+                } else if (func == bytes32("cancel")) {
                     address account = address(uint256(actions[pos++]));
                     uint betid = uint(actions[pos++]);
                     if (commitPhase && (pos >= minedOffset)) {
+                        BetItem storage cancellingBet = allBets[betid];
+                        if (cancellingBet.owner == account) {
+                            paycancel(betid);
+                        }
                     } else {
                         actionHash = bytes31(keccak256(abi.encodePacked(actionHash, cancelHash(account, betid))));
                     }
-                }
-                if (func == bytes32("payouts")) {
+                } else if (func == bytes32("payouts")) {
                     uint betlen = uint256(actions[pos++]);
                     uint[] memory bets = new uint[](betlen);
                     for (uint x = 0; x < betlen; x++) {
@@ -380,11 +393,13 @@ contract Bettex is usingProvable {
                     } else {
                         actionHash = bytes31(keccak256(abi.encodePacked(actionHash, payoutHash(bets))));
                     }
+                } else {
+                    revert("invalid action code");
                 }
 
             }
             if (!commitPhase) {
-                require(actionHash == checkpoints[minedCheckpoint + 1].hash, "action hash mismatch");
+                // require(actionHash == checkpoints[minedCheckpoint + 1].hash, "action hash mismatch");
             } else {
                 minedOffset = 0;
                 minedCheckpoint++;
@@ -555,26 +570,7 @@ contract Bettex is usingProvable {
         return string(abi.encodePacked("0", uint2str(i)));
     }
     
-    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint j = _i;
-        uint len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint k = len - 1;
-        while (_i != 0) {
-            bstr[k--] = byte(uint8(48 + _i % 10));
-            _i /= 10;
-        }
-        return string(bstr);
-    }
-    
-       function bytes2uint(bytes memory s, uint start, uint end) internal pure returns (uint64) {
+   function bytes2uint(bytes memory s, uint start, uint end) internal pure returns (uint64) {
         uint64 retval = 0;
         for (uint i = start; i < end; i++) {
             retval = retval * 10 + (uint8(s[i]) - 48);

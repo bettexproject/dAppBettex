@@ -48,6 +48,10 @@ module.exports = (app) => {
                                 serializedActions.push(`0x${uint2bytes32(input.bets.length)}`);
                                 _.forEach(input.bets, b => serializedActions.push(`0x${uint2bytes32(b)}`));
                             }
+                            if (input.name === 'cancel') {
+                                serializedActions.push(`0x${address2bytes32(unmined[i].account)}`);
+                                serializedActions.push(`0x${uint2bytes32(input.betid)}`);
+                            }
                         }
 
                         console.log(serializedActions);

@@ -319,9 +319,11 @@ module.exports = (app) => {
                     if (currentBet) {
                         app.api.fireEvent(`bets-${currentBet.account}`, currentBet);
                         await app.models.sportr.notifyChangeById(currentBet.eventid);
+                        console.log('bet changed', currentBet.eventid);
                     } else {
                         app.api.fireEvent(`bets-${prevBets[i].account}`, { ...prevBets[i], dismiss: true });
                         await app.models.sportr.notifyChangeById(prevBets[i].eventid);
+                        console.log('bet changed', prevBets[i].eventid);
                     }
                 }
             }
