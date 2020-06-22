@@ -46,8 +46,8 @@ export default {
             gasPrice: await gasPrice(),
             data: contract.methods.bet(params.event,
                 params.subevent,
-                params.amount * config.decimalMultiplicator,
-                params.odds * config.ODDS_PRECISION,
+                Math.round(params.amount * config.decimalMultiplicator),
+                Math.round(params.odds * config.ODDS_PRECISION),
                 params.side === 'for').encodeABI(),
         });
     },
