@@ -1,10 +1,10 @@
 <template>
     <div v-if="!isLoggedIn">Login with
-        <span class="keeper-install" @click="loginLS">
+        <!-- <span class="keeper-install" @click="loginLS">
         <div class="localstorage-logo"></div>
         local storage
-      </span>
-        <span>or</span>
+      </span> -->
+        <!-- <span>or</span> -->
         <span v-if="!getNoMetamask" class="keeper-install" @click="loginMetamask">
             <div class="metamask-logo"></div>
         </span>

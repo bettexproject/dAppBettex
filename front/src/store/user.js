@@ -50,6 +50,10 @@ export default {
             api.makeDeposit(getters.getAuth, amount);
         },
 
+        makeWithdraw({ getters }, amount) {
+            api.makeWithdraw(getters.getAuth, amount);
+        },
+
         onLogin({ dispatch, getters, commit }) {
             const account = getters.getUserAddress;
             dispatch('addSocketListener', {

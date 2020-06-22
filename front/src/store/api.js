@@ -29,6 +29,15 @@ export default {
             data: contract.methods.deposit(amount).encodeABI(),
         });
     },
+    makeWithdraw: async (auth, amount) => {
+        return auth.signEthTx({
+            from: auth.address,
+            to: config.escrowAddress,
+            value: 0,
+            gasPrice: await gasPrice(),
+            data: contract.methods.withdraw(amount).encodeABI(),
+        });
+    },
     bet: async (auth, params) => {
         return auth.signEthTx({
             from: auth.address,

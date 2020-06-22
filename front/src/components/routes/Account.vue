@@ -32,7 +32,7 @@
         const _tabs = [];
         this.getAuthName && _tabs.push({
           component: Bets,
-          title: 'bet history',
+          title: 'Bet history',
           link: 'bets',
         });
         _tabs.push({
@@ -41,7 +41,7 @@
           link: 'deposit',
         });
         _tabs.push({
-          component: Deposit,
+          component: Withdraw,
           title: 'Withdraw USDT',
           link: 'withdraw',
         });

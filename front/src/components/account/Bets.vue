@@ -7,7 +7,7 @@
 <!--      </Switcher>-->
 <!--    </div>-->
     <div class="bet-history-actions" v-if="getMyBetsExtended.length">
-      <div class="title-2">Need approve</div>
+      <div class="title-2">Bet history</div>
       <Paginate :items="getMyBetsExtended" :pageSize="config.betPageSize">
         <div slot-scope="{ items }">
           <table class="bet-history-table">
