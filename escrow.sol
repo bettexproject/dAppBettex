@@ -5,134 +5,14 @@ import "github.com/provable-things/ethereum-api/provableAPI_0.6.sol";
 contract Bettex is usingProvable {
     
     uint constant public ODDS_PRECISION = 100;
-    bytes32 constant keccak_id = keccak256(abi.encodePacked("_id"));
-    bytes32 constant keccak_status = keccak256(abi.encodePacked("status"));
-    bytes32 constant keccak_periods = keccak256(abi.encodePacked("periods"));
-    bytes32 constant keccak_ft = keccak256(abi.encodePacked("ft"));
-    bytes32 constant keccak_home = keccak256(abi.encodePacked("home"));
-    bytes32 constant keccak_away = keccak256(abi.encodePacked("away"));
 
-    uint constant STATE_VALUE = 0;
-    uint constant STATE_LIST = 1;
-    uint constant STATE_KEY = 2;
-    uint constant STATE_STRINGVALUE = 3;
-    uint constant STATE_ORDVALUE = 4;
-    
-    uint64 constant subevent_t1 = 1;
-    uint64 constant subevent_t2 = 2;
-    uint64 constant subevent_draw = 3;
-    
     uint public firstBlock = block.number;
     
     mapping (bytes32 => bytes32) public callbackProofs;
     
-    function parseEventResult(bytes memory input) internal {
-        uint64 eventid = 0;
-        uint statusid = 0;
-        uint periods_ft_home = 0;
-        uint periods_ft_away = 0;
-
-        uint state = STATE_VALUE;
-        uint depth = 0;
-        uint stringStart;
-        bytes32[] memory path = new bytes32[](10);
-
-        for (uint p = 0; p < input.length; p++) {
-            byte c = input[p];
-            require(depth >= 0, "depth underflow");
-            require(depth < 10, "depth overflow");
-            // if (depth >= 10) {
-            //      bytes memory k = bytesSlice(input, stringStart, p);
-            //      revert(string(k));
-            // }
-            if (state == STATE_ORDVALUE) {
-                if ((c == " ") || (c == ":")) {
-                    continue;
-                }
-                if ((c == ",")||(c == "}")) {
-                    // react to int values by some paths
-                    // _id
-                    if (path[1] == keccak_id) {
-                        eventid = bytes2uint(input, stringStart, p);
-                    }
-                    // status._id
-                    else if ((depth == 2) && (path[1] == keccak_status) && (path[2] == keccak_id)) {
-                        statusid = bytes2uint(input, stringStart, p);
-                    } else if ((depth == 3) && (path[1] == keccak_periods) && (path[2] == keccak_ft)) {
-                        if (path[3] == keccak_home) {
-                            // periods.ft.home
-                            periods_ft_home = bytes2uint(input, stringStart, p);
-                        } else if (path[3] == keccak_away) {
-                            // periods.ft.away
-                            periods_ft_away = bytes2uint(input, stringStart, p);
-                        }
-                    }
-                    state = STATE_LIST;
-                    if (c== "}") {
-                        depth--;
-                    }
-                    continue;
-                }
-            }
-            if (state == STATE_VALUE) {
-                if (c == "{") {
-                    state = STATE_LIST;
-                    depth++;
-                    continue;
-                }
-                if (c == "\"") {
-                    state = STATE_STRINGVALUE;
-                    stringStart = p + 1;
-                    continue;
-                }
-                if ((c != ":") && (c != " ") && (c != "\"")) {
-                    stringStart = p;
-                    state = STATE_ORDVALUE;
-                    continue;
-                }
-            }
-            if (state == STATE_STRINGVALUE) {
-                if (c == "\"") {
-                    // bytes memory valuestring = bytesSlice(input, stringStart, p);
-                    state = STATE_LIST;
-                    continue;
-                }
-            }
-            if (state == STATE_LIST) {
-                if (c == "\"") {
-                    state = STATE_KEY;
-                    stringStart = p + 1;
-                    continue;
-                }
-                if (c == "}") {
-                    depth--;
-                    continue;
-                }
-            }
-            if (state == STATE_KEY) {
-                if (c == "\"") {
-                    bytes memory keystring = bytesSlice(input, stringStart, p);
-                    path[depth] = keccak256(abi.encodePacked(keystring));
-                    state = STATE_VALUE;
-                    continue;
-                }
-            }
-        }
-
-        // finished
-        if ((statusid == 100) || (statusid == 110) || (statusid == 120) || (statusid == 125)) {
-            setEventStatus(eventid, subevent_t1, periods_ft_home > periods_ft_away);
-            setEventStatus(eventid, subevent_t2, periods_ft_home < periods_ft_away);
-            setEventStatus(eventid, subevent_draw, periods_ft_home == periods_ft_away);
-        }
-    }
-
     mapping (bytes32 => uint) public eventStatus; // 0 - undefined, 1 - for won, 2 - against won, 3- refund
     
-    event EventStatusChanged(uint64, uint64, bool);
-    
     function setEventStatus(uint64 eventid, uint64 subevent, bool isForWon) internal {
-        emit EventStatusChanged(eventid, subevent, isForWon);
         eventStatus[getEventHash(eventid, subevent)] = isForWon ? 1 : 2;
     }
 
@@ -146,7 +26,7 @@ contract Bettex is usingProvable {
 
     
     function payouts(uint[] calldata bets) external {
-        addActionProof(payoutHash(bets), bets.length / 4 + 1, true);
+        addActionProof(payoutHash(bets), 230, true);
     }
     
     // return unmatched
@@ -222,34 +102,22 @@ contract Bettex is usingProvable {
         addActionProof(callbackHash(msg.sender, bytes(result)), 230, true);
     }
     
-    function fetchEventResult (uint sportId, uint year, uint month, uint day, uint country, uint league, uint matchId, uint gasForCb) public payable {
-        uint gasForProvable = provable_getPrice("URL", gasForCb);
+    uint provableGasPrice;
+    
+    function fetchEventResults(uint gasPrice, uint gasForCb) public payable {
+        if (provableGasPrice != gasPrice) {
+            provable_setCustomGasPrice(gasPrice);
+            provableGasPrice = gasPrice;
+        }
+        uint gasForProvable = provable_getPrice("computation", gasForCb);
         
         if (msg.value < gasForProvable) {
             msg.sender.transfer(msg.value);
         } else {
-            bytes memory url = abi.encodePacked("json(https://ls.fn.sportradar.com/winline/en/Asia:Yekaterinburg/gismo/sport_matches/",
-                uint2str(sportId),
-                "/",
-                uint2str(year),
-                "-",
-                uint2str_pad(month),
-                "-",
-                uint2str_pad(day),
-                "/0).doc[0].data.sport.realcategories[",
-                uint2str(country),
-                "].tournaments[",
-                uint2str(league),
-                "].matches[",
-                uint2str(matchId),
-                "]"
-            );
-            
-            provable_query("URL", string(url), gasForCb);
-            msg.sender.transfer(msg.value - gasForProvable);
+            provable_query("computation", ["asd"]);
         }
     }
-
+    
     function betHash (address account, uint eventid, uint subevent, uint amount, uint odds, bool side) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked("bet", account, eventid, subevent, amount, odds, side));
     }
@@ -302,9 +170,10 @@ contract Bettex is usingProvable {
     uint public minedOffset;
     
     mapping (address => uint) public balanceOfAccount;
-    
-    event R(bytes);
-    event L(uint);
+
+    function parseOracleData(bytes32[] memory data) private {
+        
+    }
 
     /* mine from mined checkpoint + mined offset to next checkpoint */
     function playback(bytes32[] calldata actions, uint minGas) external {
@@ -322,23 +191,28 @@ contract Bettex is usingProvable {
                 if (func == bytes32("__callback")) {
                     address account = address(uint256(actions[pos++]));
                     uint len = uint256(actions[pos++]);
-                    bytes memory data = new bytes(len);
-        
+                    bytes32[] memory data = new bytes32[](len);
+                    bytes memory datastr = new bytes(len*64);
+                    
                     for (uint pp = 0; pp < len; pp++) {
-                        uint wordpos = pp / 32 + pos;
-                        uint wordoffset =  (31 - (pp % 32)) * 8;
-                        uint w = uint256(actions[wordpos]);
-                        data[pp] = byte(uint8(w >> wordoffset));
+                        uint pdata = uint(actions[pos++]);
+                        data[pp] = bytes32(pdata);
+                        for (uint ppp = 0; ppp < 32; ppp++) {
+                            uint8 char = uint8((pdata >> ppp) & 0xf);
+                            if (char < 10) {
+                                datastr[pdata * 32 + ppp] = byte(char + 48);
+                            } else {
+                                datastr[pdata * 32 + ppp] = byte(char + 87);
+                            }
+                        }
                     }
 
-                    pos += (len + 31) / 32;
-                    
                     if (commitPhase && (pos >= minedOffset)) {
                         if (account == provable_cbAddress()) {
-                            parseEventResult(data);
+                            parseOracleData(data);
                         }
                     } else {
-                        actionHash = bytes31(keccak256(abi.encodePacked(actionHash, callbackHash(account, data))));
+                        actionHash = bytes31(keccak256(abi.encodePacked(actionHash, callbackHash(account, datastr))));
                     }
                 } else if (func == bytes32("deposit")) {
                     address account = address(uint256(actions[pos++]));
